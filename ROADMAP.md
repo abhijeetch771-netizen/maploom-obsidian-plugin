@@ -20,7 +20,9 @@
 - [ ] Manually verify the new map-label wikilink transformation: readable labels for standard, aliased and heading links, with navigation through `Workspace.openLinkText`.
 - [ ] Define how embedded notes and images are represented in map-node labels/notes without duplicating or losing source content.
 - [x] Manually verify no-dot note materialization: paragraph text, table row branches, code lines, blockquotes and maths appear under their owning nodes (Obsidian test, 2026-11-12).
-- [x] Manually verify the revised table hierarchy: each data row is grouped under its first-column value, and remaining cells are labelled by their column headings (Obsidian test, 2026-11-12).
+- [x] Verify the interim hierarchical table representation before replacing it with a proper grid (manual Obsidian test, 2026-11-12; superseded).
+- [x] Implement a grid-shaped SVG table atom with distinct header cells, cell borders, wrapped text, and preserved Markdown column alignment (GitHub CI, 2026-11-12; manual Obsidian verification pending).
+- [ ] Manually verify table headers, cell boundaries, left/center/right alignment and wrapped values in the Maploom graph.
 - [x] Verify a relative Markdown image appears as an actual image preview in the graph (Obsidian test, 2026-11-12).
 - [ ] Verify Obsidian `![[image]]` embeds appear as actual image previews in the graph; Source note modal rendering is already verified.
 - [x] Verify Show notes / Hide notes toggling; both states work without restoring grey dots (manual Obsidian test, 2026-11-12).
