@@ -17,12 +17,12 @@
 - [x] Verify `@markmap/plugin-math` renders an inline LaTeX equation (manual Obsidian test, 2026-11-11).
 - [ ] Verify task-list checked state and content in source-note modal.
 - [ ] Build automated regression tests for Markdown/GFM rendering.
-- [ ] Manually verify the new map-label wikilink transformation: readable labels for standard, aliased and heading links, with navigation through `Workspace.openLinkText`.
+- [x] Manually verify map-label wikilinks: readable labels for standard, aliased and heading links, with navigation through `Workspace.openLinkText` (user confirmed, 2026-11-11).
 - [ ] Verify whole-note block embeds (`![[Note]]`) expand into nested graph branches, including nested embeds, aliases, path-aware wikilinks/images, cycle protection and Show notes / Hide notes behaviour (implementation committed; CI and manual validation pending).
 - [ ] Extend graph expansion to section/block embeds (`![[Note#Heading]]`, `![[Note#^block]]`) and mixed inline embeds; these are intentionally not included in the first implementation.
 - [x] Manually verify no-dot note materialization: paragraph text, table row branches, code lines, blockquotes and maths appear under their owning nodes (Obsidian test, 2026-11-12).
 - [x] Verify the interim hierarchical table representation before replacing it with a proper grid (manual Obsidian test, 2026-11-12; superseded).
-- [x] Implement a grid-shaped SVG table atom with distinct header cells, cell borders, wrapped text, and preserved Markdown column alignment (GitHub CI, 2026-11-12; manual Obsidian verification pending).
+- [x] Implement and manually verify a grid-shaped SVG table atom with distinct header cells, cell borders, wrapped text, and preserved Markdown column alignment (user confirmed, 2026-11-12).
 - [x] Manually verify table grid rendering in the Maploom graph (headers, cell grid and row/column preservation; user confirmed, 2026-11-12).
 - [x] Verify a relative Markdown image appears as an actual image preview in the graph (Obsidian test, 2026-11-12).
 - [x] Verify Obsidian `![[image]]` embeds appear as actual image previews in the graph; ordinary Markdown image previews also remain functional (manual Obsidian test, user screenshot confirmation, 2026-11-12).
@@ -34,11 +34,11 @@
 - [x] Implement and manually verify attached note blocks as ordinary child branches, with a working Show notes / Hide notes toolbar control (user confirmed, 2026-11-12).
 - [x] Make the map canvas use the full available workspace by default.
 - [x] Add an on-demand Source note modal using Obsidian's MarkdownRenderer; opening it does not resize the map canvas.
-- [x] Verify standard wikilinks, aliased wikilinks and heading links render as Obsidian links in the Source note modal (manual test, 2026-11-11; click navigation still to be tested).
+- [x] Verify standard wikilinks, aliased wikilinks and heading links render as Obsidian links in the Source note modal (manual test, 2026-11-11).
 - [x] Verify embedded notes render their headings, paragraphs, tables and blockquotes in the Source note modal (manual test, 2026-11-11).
 - [x] Verify Obsidian image embeds and ordinary Markdown local images render in the Source note modal (manual test, 2026-11-11).
 - [x] Verify internal-link click navigation for standard, aliased and heading links from the Source note modal through `Workspace.openLinkText` (manual test, 2026-11-11).
-- [x] Implement map-to-source navigation for the active note: Markmap hit-testing identifies the clicked node; preserved mdast offsets locate the exact source block; the Source note modal opens at that block, scrolls it into view and temporarily highlights it. Original Markdown is not modified (GitHub CI, 2026-11-12; code-block navigation manually confirmed by user, 2026-11-12; remaining node types pending).
+- [x] Implement map-to-source navigation for the active note: Markmap hit-testing identifies the clicked node; preserved mdast offsets locate the exact source block; the Source note modal opens at that block, scrolls it into view and temporarily highlights it. Original Markdown is not modified (local production build and full manual Obsidian verification, user confirmed 2026-11-12; latest CI queue remains pending).
 - [x] Manually verify map-to-source navigation for headings, paragraphs, list items, tables and code blocks in Obsidian; confirm closing the modal returns to the unchanged map view (user confirmed all cases, 2026-11-12).
 - [x] Specifically verify code-block navigation highlights the rendered `<pre>` element itself, not the blank anchor paragraph immediately before the fenced block (manual Obsidian test; user confirmed, 2026-11-12).
 - [ ] Live updates while editing the source note.
