@@ -306,9 +306,17 @@ class SourceNoteModal extends Modal {
             'h1,h2,h3,h4,h5,h6,p,li,blockquote,td,th,pre',
           ) as HTMLElement | null ?? marker;
 
-          if (this.targetNodeType === 'noteCode') {
-            const next = marker.nextElementSibling ?? marker.parentElement?.nextElementSibling;
-            if (next instanceof HTMLElement && next.matches('pre')) target = next;
+          if (this.targetNodeType === 'noteCode' || this.targetNodeType === 'noteCodeLine') {
+            // MarkdownRenderer can wrap an isolated anchor in its own empty
+            // paragraph before a fenced code block. Sibling lookup is therefore
+            // unreliable. Find the first <pre> that follows the marker in DOM
+            // document order and highlight that actual rendered code block.
+            const followingCodeBlock = Array.from(
+              this.contentEl.querySelectorAll('pre'),
+            ).find((pre) =>
+              Boolean(marker.compareDocumentPosition(pre) & Node.DOCUMENT_POSITION_FOLLOWING),
+            );
+            if (followingCodeBlock) target = followingCodeBlock;
           }
 
           target.classList.add('maploom-source-highlight');
