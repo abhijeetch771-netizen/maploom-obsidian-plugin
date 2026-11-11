@@ -17,6 +17,7 @@ import { Markmap, resolveViewOptions } from '@markmap/view';
 import { materializeNoteBlocks, type NoteTreeNode } from '../core/note-nodes';
 import { createVaultImageContent } from '../core/image-content';
 import { tableContent } from '../core/table-content';
+import { expandEmbeddedNotes } from '../core/embedded-notes';
 
 interface RemarkNode {
   type?: string;
@@ -89,7 +90,7 @@ function splitWikilinks(value: string, app: App, sourcePath: string): RemarkNode
 
       result.push({
         type: 'link',
-        url: `#maploom-wikilink:${encodeURIComponent(target)}`,
+        url: `#maploom-wikilink:${encodeURIComponent(JSON.stringify({ target, sourcePath }))}`,
         children: [{ type: 'text', value: label }],
       });
     }
@@ -438,10 +439,22 @@ export class MaploomView extends ItemView {
         event.preventDefault();
         event.stopPropagation();
         try {
-          const linkText = decodeURIComponent(href.slice(prefix.length));
+          const decoded = decodeURIComponent(href.slice(prefix.length));
+          let linkText = decoded;
+          let linkSourcePath = this.sourcePath;
+          try {
+            const payload = JSON.parse(decoded) as {
+              target?: unknown;
+              sourcePath?: unknown;
+            };
+            if (typeof payload.target === 'string') linkText = payload.target;
+            if (typeof payload.sourcePath === 'string') linkSourcePath = payload.sourcePath;
+          } catch {
+            // Accept link fragments created by older Maploom builds.
+          }
           void this.app.workspace.openLinkText(
             linkText,
-            this.sourcePath,
+            linkSourcePath,
             Keymap.isModEvent(event),
           );
         } catch (error) {
@@ -524,12 +537,38 @@ export class MaploomView extends ItemView {
       const { root, frontmatter } = parse(markdown, {
         plugins: [...parsePlugins, remarkCaptureSourcePositions],
       });
+      const treeRoot = root as unknown as NoteTreeNode;
+
       // Materialize attached block notes as visible child branches. This keeps
       // their content in the map and in future static exports without markers.
-      if (this.showNoteContent) materializeNoteBlocks(root as unknown as NoteTreeNode);
+      if (this.showNoteContent) {
+        materializeNoteBlocks(treeRoot);
+
+        if (this.sourcePath) {
+          await expandEmbeddedNotes(treeRoot, {
+            app: this.app,
+            sourcePath: this.sourcePath,
+            parseMarkdown: (embeddedMarkdown, embeddedPath) => {
+              const embedded = parse(embeddedMarkdown, {
+                plugins: [
+                  remarkMath,
+                  createRemarkObsidianWikilinks(this.app, embeddedPath),
+                  createRemarkObsidianImages(this.app, embeddedPath),
+                  remarkCaptureSourcePositions,
+                ],
+              });
+              return embedded.root as unknown as NoteTreeNode;
+            },
+          });
+        }
+      }
 
       this.sourceLocations.clear();
       const collectSourceLocations = (node: NoteTreeNode): void => {
+        // Imported nodes belong to an embedded file, not the active source
+        // note. The embed container itself retains the host-note location.
+        if (node.data?.maploomEmbedded === true) return;
+
         const position = node.position ?? (
           node.data?.maploomSourcePosition as { start?: number; end?: number } | undefined
         );
@@ -542,7 +581,7 @@ export class MaploomView extends ItemView {
         }
         node.children.forEach(collectSourceLocations);
       };
-      collectSourceLocations(root as unknown as NoteTreeNode);
+      collectSourceLocations(treeRoot);
 
       const { options, warnings } = resolveViewOptions(
         { colorScheme: 'auto' },
