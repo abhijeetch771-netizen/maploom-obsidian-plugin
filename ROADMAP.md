@@ -18,13 +18,13 @@
 - [ ] Verify task-list checked state and content in source-note modal.
 - [ ] Build automated regression tests for Markdown/GFM rendering.
 - [ ] Manually verify the new map-label wikilink transformation: readable labels for standard, aliased and heading links, with navigation through `Workspace.openLinkText`.
-- [ ] Define how embedded notes and images are represented in map-node labels/notes without duplicating or losing source content.
+- [ ] Define how embedded notes are represented in map-node labels/notes without duplicating or losing source content; graph image embeds are verified, but `![[Note]]` currently remains literal text in the graph.
 - [x] Manually verify no-dot note materialization: paragraph text, table row branches, code lines, blockquotes and maths appear under their owning nodes (Obsidian test, 2026-11-12).
 - [x] Verify the interim hierarchical table representation before replacing it with a proper grid (manual Obsidian test, 2026-11-12; superseded).
 - [x] Implement a grid-shaped SVG table atom with distinct header cells, cell borders, wrapped text, and preserved Markdown column alignment (GitHub CI, 2026-11-12; manual Obsidian verification pending).
 - [x] Manually verify table grid rendering in the Maploom graph (headers, cell grid and row/column preservation; user confirmed, 2026-11-12).
 - [x] Verify a relative Markdown image appears as an actual image preview in the graph (Obsidian test, 2026-11-12).
-- [ ] Verify Obsidian `![[image]]` embeds appear as actual image previews in the graph; Source note modal rendering is already verified.
+- [x] Verify Obsidian `![[image]]` embeds appear as actual image previews in the graph; ordinary Markdown image previews also remain functional (manual Obsidian test, user screenshot confirmation, 2026-11-12).
 - [x] Verify Show notes / Hide notes toggling; both states work without restoring grey dots (manual Obsidian test, 2026-11-12).
 - [ ] Verify Obsidian-specific callouts, properties/frontmatter, block references and relative attachment paths.
 
