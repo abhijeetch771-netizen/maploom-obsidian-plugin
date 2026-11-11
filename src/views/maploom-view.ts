@@ -14,6 +14,7 @@ import { parse } from '@markmap/parse';
 import { mathContent, remarkMath } from '@markmap/plugin-math';
 import { basicContent, imageContent } from '@markmap/render';
 import { Markmap, resolveViewOptions } from '@markmap/view';
+import { materializeNoteBlocks, type NoteTreeNode } from '../core/note-nodes';
 
 interface RemarkNode {
   type?: string;
@@ -164,6 +165,7 @@ export class MaploomView extends ItemView {
   private map: Markmap | null = null;
   private sourcePath: string | null = null;
   private sourceMarkdown: string | null = null;
+  private showNoteContent = true;
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
@@ -189,6 +191,14 @@ export class MaploomView extends ItemView {
     toolbar.createEl('button', { text: 'Fit' }).addEventListener('click', () => this.map?.fit());
     toolbar.createEl('button', { text: 'Expand all' }).addEventListener('click', () => this.map?.expandAll());
     toolbar.createEl('button', { text: 'Fold all' }).addEventListener('click', () => this.map?.foldAll());
+    const notesToggle = toolbar.createEl('button', { text: 'Hide notes' });
+    notesToggle.setAttribute('aria-pressed', 'true');
+    notesToggle.addEventListener('click', () => {
+      this.showNoteContent = !this.showNoteContent;
+      notesToggle.setText(this.showNoteContent ? 'Hide notes' : 'Show notes');
+      notesToggle.setAttribute('aria-pressed', String(this.showNoteContent));
+      if (this.sourceMarkdown) void this.renderMarkdown(this.sourceMarkdown);
+    });
     toolbar.createEl('button', { text: 'Source note' }).addEventListener('click', () => this.openSourceNote());
 
     const mapPanel = this.contentEl.createDiv({ cls: 'maploom-map-panel' });
@@ -283,6 +293,9 @@ export class MaploomView extends ItemView {
         ? [remarkMath, createRemarkObsidianWikilinks(this.app, this.sourcePath)]
         : [remarkMath];
       const { root, frontmatter } = parse(markdown, { plugins: parsePlugins });
+      // Materialize attached block notes as visible child branches. This keeps
+      // their content in the map and in future static exports without markers.
+      if (this.showNoteContent) materializeNoteBlocks(root as unknown as NoteTreeNode);
       const { options, warnings } = resolveViewOptions(
         { colorScheme: 'auto' },
         frontmatter?.markmap,
