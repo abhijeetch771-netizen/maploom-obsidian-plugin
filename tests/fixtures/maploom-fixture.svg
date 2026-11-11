@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="240" viewBox="0 0 640 240">
+  <rect width="640" height="240" rx="24" fill="#e8f1ff"/>
+  <circle cx="112" cy="120" r="54" fill="#3273dc"/>
+  <path d="M166 120 H290 M290 120 L350 65 M290 120 L350 175" fill="none" stroke="#3273dc" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="370" cy="65" r="22" fill="#ef8a17"/>
+  <circle cx="370" cy="175" r="22" fill="#20a37a"/>
+  <text x="420" y="115" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#1c2d45">Maploom image test</text>
+  <text x="420" y="151" font-family="Arial, sans-serif" font-size="18" fill="#40536b">Local SVG asset</text>
+</svg>
