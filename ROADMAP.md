@@ -37,7 +37,7 @@
 - [x] Verify embedded notes render their headings, paragraphs, tables and blockquotes in the Source note modal (manual test, 2026-11-11).
 - [x] Verify Obsidian image embeds and ordinary Markdown local images render in the Source note modal (manual test, 2026-11-11).
 - [x] Verify internal-link click navigation for standard, aliased and heading links from the Source note modal through `Workspace.openLinkText` (manual test, 2026-11-11).
-- [ ] Add map-to-source navigation: selecting/focusing a map heading opens the source note and scrolls to the corresponding section.
+- [ ] Implement map-to-source navigation for the active note: clicking a heading or content node opens the Source note modal at its corresponding source location, scrolls the section into view, and temporarily highlights the matching heading or paragraph. Closing the modal must return to the unchanged map view.
 - [ ] Live updates while editing the source note.
 - [ ] Persist map display preferences.
 - [ ] Settings tab for map and rendering options.
