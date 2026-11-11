@@ -48,9 +48,9 @@ See [ROADMAP.md](ROADMAP.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Verification status
 
-The early prototype has passed a local Windows build, GitHub Actions build, and manual rendering checks for tables, code, blockquotes, math, inline formatting, external links and a relative local SVG image.
+The early prototype has passed a local Windows build, GitHub Actions build, and manual rendering checks for tables, code, blockquotes, math, inline formatting, external links, relative local Markdown images and Obsidian `![[image]]` embeds.
 
-The on-demand Source note modal, including internal-link click navigation, has been manually tested. The new map-to-source navigation (heading/content click, scroll and highlight), no-dot note branches, table grid renderer and graph image previews require manual validation of the latest implementation in a disposable Obsidian vault. Export functionality is planned but not implemented. Do not treat this prototype as an installable public release.
+The on-demand Source note modal, including internal-link click navigation, has been manually tested. The no-dot note branches and table grid renderer have been manually verified. Both ordinary Markdown image previews and Obsidian `![[image]]` previews in the graph have also been verified. Map-to-source navigation for headings, paragraphs, list items and tables still requires manual validation in a disposable Obsidian vault. Obsidian note embeds (`![[Note]]`) are not yet transformed into graph content and currently remain literal text. Export functionality is planned but not implemented. Do not treat this prototype as an installable public release.
 
 ## Privacy and source integrity
 
