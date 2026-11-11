@@ -49,7 +49,7 @@ function createRemarkObsidianWikilinks(app: App, sourcePath: string) {
 }
 
 function splitWikilinks(value: string, app: App, sourcePath: string): RemarkNode[] {
-  const pattern = /\\[\\[([^\\]\\n]+)\\]\\]/g;
+  const pattern = /\[\[([^\]]+)\]\]/g;
   const result: RemarkNode[] = [];
   let from = 0;
   let match: RegExpExecArray | null;
@@ -216,7 +216,7 @@ export class MaploomView extends ItemView {
 
     // Markmap emits SVG anchors for linked label text. Route our special
     // wikilink fragments through Obsidian instead of opening them in a browser.
-    this.registerDomEvent(this.svg, 'click', (event: MouseEvent) => {
+    this.registerDomEvent(this.contentEl, 'click', (event: MouseEvent) => {
       if (event.button !== 0 || !(event.target instanceof Element)) return;
       const anchor = event.target.closest('a[href]');
       const href = anchor?.getAttribute('href') ?? '';
