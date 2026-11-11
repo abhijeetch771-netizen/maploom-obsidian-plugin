@@ -222,7 +222,7 @@ function injectSourceAnchor(
   const heading = line.match(/^(\s{0,3}#{1,6}\s+)/);
   const quote = line.match(/^(\s*(?:>\s*)+)/);
   const list = line.match(/^(\s*(?:[-+*]|\d+[.)])\s+)/);
-  const isFence = /^\s*(?:\`{3,}|~{3,})/.test(line);
+  const isFence = line.trimStart().startsWith('```') || line.trimStart().startsWith('~~~');
 
   if (isFence || location.type === 'noteCode') {
     return markdown.slice(0, lineStart) + marker + '\n\n' + markdown.slice(lineStart);
