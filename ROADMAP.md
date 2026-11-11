@@ -15,19 +15,20 @@
 - [x] Verify external Markdown hyperlinks render as clickable links (manual Obsidian test, 2026-11-11).
 - [x] Verify a relative local SVG image renders (manual Obsidian test, 2026-11-11).
 - [x] Verify `@markmap/plugin-math` renders an inline LaTeX equation (manual Obsidian test, 2026-11-11).
-- [ ] Verify task-list checked state and content in the source-note panel.
+- [ ] Verify task-list checked state and content in source-note modal.
 - [ ] Build automated regression tests for Markdown/GFM rendering.
-- [ ] Resolve Obsidian wikilinks, aliases, heading links, note embeds, image embeds, and attachments in a disposable vault.
-- [ ] Verify that Obsidian-specific callouts, properties/frontmatter, block references, and relative attachment paths render correctly.
+- [ ] Resolve Obsidian wikilinks, aliases, heading links, note embeds, image embeds and attachments in a disposable vault.
+- [ ] Verify Obsidian-specific callouts, properties/frontmatter, block references and relative attachment paths.
 
-## Phase 2 — Obsidian integration and note presentation
+## Phase 2 — Obsidian integration and note access
 - [x] Adopt a no-grey-dot interaction model: omit Markmap note markers and popovers.
-- [x] Implement a persistent source-note panel rendered through Obsidian's MarkdownRenderer; panel is visible by default and can be hidden.
-- [ ] Manually verify wikilinks, aliased links, heading links, note embeds and image embeds in the source panel.
-- [ ] Add map-to-source navigation: selecting/focusing a map heading scrolls the source panel to the corresponding section.
+- [x] Make the map canvas use the full available workspace by default.
+- [x] Add an on-demand Source note modal using Obsidian's MarkdownRenderer; opening it does not resize the map canvas.
+- [ ] Manually verify wikilinks, aliased links, heading links, note embeds and image embeds in the Source note modal.
+- [ ] Add map-to-source navigation: selecting/focusing a map heading opens the source note and scrolls to the corresponding section.
 - [ ] Live updates while editing the source note.
-- [ ] Persist panel visibility and layout preferences.
-- [ ] Settings tab for map, source panel and rendering options.
+- [ ] Persist map display preferences.
+- [ ] Settings tab for map and rendering options.
 - [ ] Theme compatibility, keyboard navigation and accessibility checks.
 
 ## Phase 3 — Export
