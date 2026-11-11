@@ -16,6 +16,7 @@ import { basicContent } from '@markmap/render';
 import { Markmap, resolveViewOptions } from '@markmap/view';
 import { materializeNoteBlocks, type NoteTreeNode } from '../core/note-nodes';
 import { createVaultImageContent } from '../core/image-content';
+import { tableContent } from '../core/table-content';
 
 interface RemarkNode {
   type?: string;
@@ -397,7 +398,7 @@ export class MaploomView extends ItemView {
       // the Source note modal and will be included directly in exports.
       const viewOptions = {
         ...options,
-        plugins: [basicContent, mathContent, this.vaultImageContent],
+        plugins: [basicContent, mathContent, tableContent, this.vaultImageContent],
       };
 
       if (this.map) this.map.setTree(root, viewOptions);
