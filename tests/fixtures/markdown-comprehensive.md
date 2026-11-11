@@ -37,4 +37,4 @@ console.log(maploom);
 
 ## Mathematics
 
-Euler identity: $e^{i\\pi} + 1 = 0$.
+Euler identity: $e^{i\pi} + 1 = 0$.
