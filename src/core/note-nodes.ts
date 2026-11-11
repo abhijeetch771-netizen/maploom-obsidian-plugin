@@ -82,6 +82,7 @@ function tableToNode(block: NoteBlock, id: string): NoteTreeNode {
     type: 'maploomTable',
     headers,
     rows: dataRows,
+    align: (block as NoteBlock & { align?: Array<'left' | 'right' | 'center' | null> }).align ?? [],
   };
 
   return makeNode(
