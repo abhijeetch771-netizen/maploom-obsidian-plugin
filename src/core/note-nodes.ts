@@ -128,13 +128,13 @@ function blockToNode(block: NoteBlock, id: string): NoteTreeNode {
       );
       const lines = (block.value ?? '').replace(/\r\n/g, '\n').split('\n');
       code.children = lines.map((line, lineIndex) =>
-        makeNode(
+        withSourcePosition(makeNode(
           id + '-line-' + (lineIndex + 1),
           'noteCodeLine',
           [{ type: 'inlineCode', value: line || ' ' }],
           [],
           'codeLine',
-        ),
+        ), block),
       );
       return withSourcePosition(code, block);
     }
@@ -170,7 +170,7 @@ function blockToNode(block: NoteBlock, id: string): NoteTreeNode {
         );
         return child;
       });
-      return list;
+      return withSourcePosition(list, block);
     }
 
     case 'thematicBreak':
