@@ -12,7 +12,7 @@
 - [ ] Verify paragraph ownership and rendering across larger notes.
 - [x] Verify a basic GFM table renders as a formatted table in a node-note popover (manual Obsidian test, 2026-11-11).
 - [ ] Verify inline formatting, links, images and task lists.
-- [ ] Verify newly integrated `@markmap/plugin-math` in Obsidian.
+- [x] Verify `@markmap/plugin-math` renders an inline LaTeX equation in an Obsidian node-note popover (manual test, 2026-11-11).
 - [ ] Build regression fixtures.
 - [ ] Resolve Obsidian wikilinks, embeds and asset paths safely.
 
