@@ -3,7 +3,7 @@
   "name": "Maploom",
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
-  "description": "Turn Markdown notes into interactive mind maps with folding, zooming, themes, and rich content.",
+  "description": "Turn Markdown notes into interactive mind maps in Obsidian.",
   "author": "Maploom contributors",
   "isDesktopOnly": false
 }
