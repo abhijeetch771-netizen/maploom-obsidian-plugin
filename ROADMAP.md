@@ -19,10 +19,13 @@
 - [ ] Build automated regression tests for Markdown/GFM rendering.
 - [ ] Manually verify the new map-label wikilink transformation: readable labels for standard, aliased and heading links, with navigation through `Workspace.openLinkText`.
 - [ ] Define how embedded notes and images are represented in map-node labels/notes without duplicating or losing source content.
+- [ ] Manually verify the new no-dot note materialization: paragraphs, formatted table rows, code lines, blockquotes and maths appear as child branches under their owning nodes.
+- [ ] Verify Show notes / Hide notes toggling and confirm hiding notes does not restore grey dots.
 - [ ] Verify Obsidian-specific callouts, properties/frontmatter, block references and relative attachment paths.
 
 ## Phase 2 — Obsidian integration and note access
 - [x] Adopt a no-grey-dot interaction model: omit Markmap note markers and popovers.
+- [x] Implement attached note blocks as ordinary child branches, with a Show notes / Hide notes toolbar control; manual Obsidian verification pending.
 - [x] Make the map canvas use the full available workspace by default.
 - [x] Add an on-demand Source note modal using Obsidian's MarkdownRenderer; opening it does not resize the map canvas.
 - [x] Verify standard wikilinks, aliased wikilinks and heading links render as Obsidian links in the Source note modal (manual test, 2026-11-11; click navigation still to be tested).
