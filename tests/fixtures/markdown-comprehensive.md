@@ -14,6 +14,14 @@ A paragraph with **bold**, *italic*, ~~strike~~, `inline code`, and a [link](htt
   - [ ] Incomplete task
 - Second branch
 
+## Links, formatting and images
+
+A paragraph with **bold**, *italic*, ~~strikethrough~~, `inline code`, and a [test link to OpenAI](https://openai.com).
+
+The image below is a local SVG asset stored beside this fixture.
+
+![Maploom local image fixture](maploom-fixture.svg)
+
 ## Tables
 
 The table must appear as a formatted table in the node-note popover.
