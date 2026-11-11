@@ -11,10 +11,13 @@
 - [x] Verify heading hierarchy, nested lists, task-list markers, blockquotes and code blocks in Obsidian (manual test, 2026-11-11).
 - [ ] Verify paragraph ownership and rendering across larger notes.
 - [x] Verify a basic GFM table renders as a formatted table in a node-note popover (manual Obsidian test, 2026-11-11).
-- [ ] Verify inline formatting, links, local images and task-list popovers using the expanded regression fixture.
+- [x] Verify inline bold, italic, strikethrough and inline code in node-note popovers (manual Obsidian test, 2026-11-11).
+- [x] Verify external Markdown hyperlinks render as clickable links (manual Obsidian test, 2026-11-11).
+- [x] Verify a relative local SVG image resolves from the source note and renders in the node-note popover (manual Obsidian test, 2026-11-11).
+- [ ] Verify task-list popover content and checked state.
 - [x] Verify `@markmap/plugin-math` renders an inline LaTeX equation in an Obsidian node-note popover (manual test, 2026-11-11).
 - [ ] Build regression fixtures.
-- [ ] Resolve Obsidian wikilinks, embeds and asset paths safely.
+- [ ] Resolve Obsidian wikilinks and embeds safely; relative Markdown image attachment resolution is verified for a local SVG fixture.
 
 ## Phase 2 — Obsidian integration
 - [ ] Live updates while editing the source note.
