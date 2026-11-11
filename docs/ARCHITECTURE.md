@@ -30,7 +30,7 @@ Aliases in the embed syntax are used for the container label. Wikilinks inside t
 
 The host embed paragraph retains its source offset, so clicking that container opens the host note at the embed syntax. Imported child nodes are deliberately marked as belonging to an embedded file and do not reuse their offsets as if they belonged to the host note. Their own source-navigation behaviour is not implemented yet.
 
-Expansion has cycle detection and limits on nesting depth and total embedded notes. The first implementation intentionally supports standalone whole-note block embeds only. Section/block embeds (for example `![[Note#Heading]]` or `![[Note#^block]]`) and mixed inline text-plus-embed paragraphs are not expanded; they produce an explanatory map node instead. Full Obsidian embed fidelity remains available in the Source note modal. CI and manual Obsidian verification of the graph expansion are pending.
+Expansion has cycle detection and limits on nesting depth and total embedded notes. The first implementation intentionally supports standalone whole-note block embeds only. Section/block embeds (for example `![[Note#Heading]]` or `![[Note#^block]]`) produce an explanatory map node. Mixed inline text-plus-embed paragraphs remain in their original text form and are not expanded. Full Obsidian embed fidelity remains available in the Source note modal. CI and manual Obsidian verification of the graph expansion are pending.
 
 ## Initial pipeline
 
