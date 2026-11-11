@@ -13,3 +13,7 @@
 .maploom-source-content img{max-width:100%;height:auto}
 .maploom-source-content table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse}
 .maploom-source-content th,.maploom-source-content td{white-space:normal}
+
+.maploom-source-anchor{display:inline-block;width:0;height:0;overflow:hidden;vertical-align:baseline}
+.maploom-source-highlight{position:relative;outline:2px solid var(--interactive-accent);outline-offset:4px;border-radius:4px;background-color:var(--text-highlight-bg);animation:maploom-source-flash 2.4s ease-out}
+@keyframes maploom-source-flash{0%,35%{background-color:var(--text-highlight-bg);outline-color:var(--interactive-accent)}100%{background-color:transparent;outline-color:transparent}}
