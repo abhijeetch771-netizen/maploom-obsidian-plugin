@@ -1,1 +1,18 @@
-.maploom-view{height:100%;display:flex;flex-direction:column;overflow:hidden}.maploom-toolbar{display:flex;gap:6px;padding:8px;border-bottom:1px solid var(--background-modifier-border);flex-wrap:wrap}.maploom-toolbar button{cursor:pointer}.maploom-canvas{flex:1;min-height:0;width:100%;background:var(--background-primary)}.maploom-view .markmap{font-family:var(--font-text)}.maploom-view .markmap-node text{fill:var(--text-normal)}
+.maploom-view{height:100%;display:flex;flex-direction:column;overflow:hidden}
+.maploom-toolbar{display:flex;gap:6px;padding:8px;border-bottom:1px solid var(--background-modifier-border);flex-wrap:wrap}
+.maploom-toolbar button{cursor:pointer}
+.maploom-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,42%);flex:1;min-height:0;overflow:hidden}
+.maploom-map-panel{position:relative;min-width:0;min-height:0;overflow:hidden}
+.maploom-canvas{width:100%;height:100%;display:block;background:var(--background-primary)}
+.maploom-map-panel .markmap{font-family:var(--font-text)}
+.maploom-map-panel .markmap-node text{fill:var(--text-normal)}
+.maploom-source-panel{min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;border-left:1px solid var(--background-modifier-border);background:var(--background-primary)}
+.maploom-source-panel.is-hidden{display:none}
+.maploom-source-heading{position:sticky;top:0;z-index:1;padding:10px 14px;border-bottom:1px solid var(--background-modifier-border);background:var(--background-secondary);font-weight:600}
+.maploom-source-content{min-height:0;overflow:auto;padding:14px 18px;color:var(--text-normal);font-size:var(--font-text-size);line-height:var(--line-height-normal)}
+.maploom-source-content>:first-child{margin-top:0}
+.maploom-source-content>:last-child{margin-bottom:0}
+.maploom-source-content img{max-width:100%;height:auto}
+.maploom-source-content table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse}
+.maploom-source-content th,.maploom-source-content td{white-space:normal}
+@media(max-width:800px){.maploom-workspace{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(240px,1fr) minmax(220px,.8fr)}.maploom-source-panel{border-left:0;border-top:1px solid var(--background-modifier-border)}}
