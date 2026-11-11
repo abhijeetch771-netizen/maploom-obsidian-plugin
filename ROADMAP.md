@@ -17,7 +17,7 @@
 - [x] Verify `@markmap/plugin-math` renders an inline LaTeX equation (manual Obsidian test, 2026-11-11).
 - [ ] Verify task-list checked state and content in source-note modal.
 - [ ] Build automated regression tests for Markdown/GFM rendering.
-- [ ] Convert Obsidian wikilinks in map-node labels into readable labels and actionable internal navigation; avoid showing raw `[[...]]` syntax in the graph.
+- [ ] Manually verify the new map-label wikilink transformation: readable labels for standard, aliased and heading links, with navigation through `Workspace.openLinkText`.
 - [ ] Define how embedded notes and images are represented in map-node labels/notes without duplicating or losing source content.
 - [ ] Verify Obsidian-specific callouts, properties/frontmatter, block references and relative attachment paths.
 
@@ -28,7 +28,7 @@
 - [x] Verify standard wikilinks, aliased wikilinks and heading links render as Obsidian links in the Source note modal (manual test, 2026-11-11; click navigation still to be tested).
 - [x] Verify embedded notes render their headings, paragraphs, tables and blockquotes in the Source note modal (manual test, 2026-11-11).
 - [x] Verify Obsidian image embeds and ordinary Markdown local images render in the Source note modal (manual test, 2026-11-11).
-- [ ] Verify internal-link click navigation for standard, aliased and heading links after adding explicit modal handlers through `Workspace.openLinkText`.
+- [x] Verify internal-link click navigation for standard, aliased and heading links from the Source note modal through `Workspace.openLinkText` (manual test, 2026-11-11).
 - [ ] Add map-to-source navigation: selecting/focusing a map heading opens the source note and scrolls to the corresponding section.
 - [ ] Live updates while editing the source note.
 - [ ] Persist map display preferences.
