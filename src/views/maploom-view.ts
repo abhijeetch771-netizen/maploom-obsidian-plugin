@@ -374,6 +374,10 @@ export class MaploomView extends ItemView {
     toolbar.createEl('button', { text: 'Source note' }).addEventListener('click', () => this.openSourceNote());
 
     const mapPanel = this.contentEl.createDiv({ cls: 'maploom-map-panel' });
+    mapPanel.setAttribute(
+      'aria-label',
+      'Mind map. Click a heading or content node to open and highlight its source section.',
+    );
     Object.assign(mapPanel.style, {
       position: 'relative',
       display: 'flex',
@@ -398,6 +402,14 @@ export class MaploomView extends ItemView {
 
     // Markmap emits SVG anchors for linked label text. Route our special
     // wikilink fragments through Obsidian instead of opening them in a browser.
+    this.registerDomEvent(this.contentEl, 'pointermove', (event: PointerEvent) => {
+      if (!this.map || !this.svg) return;
+      const hit = this.map.hitAt(...this.map.layoutPoint(event.clientX, event.clientY));
+      if (hit?.kind === 'node') {
+        this.svg.style.cursor = this.sourceLocations.has(hit.nodeId) ? 'pointer' : '';
+      }
+    });
+
     this.registerDomEvent(this.contentEl, 'click', (event: MouseEvent) => {
       if (event.button !== 0 || !(event.target instanceof Element)) return;
 
