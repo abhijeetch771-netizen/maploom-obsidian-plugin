@@ -4,6 +4,6 @@
   <path d="M166 120 H290 M290 120 L350 65 M290 120 L350 175" fill="none" stroke="#3273dc" stroke-width="8" stroke-linecap="round"/>
   <circle cx="370" cy="65" r="22" fill="#ef8a17"/>
   <circle cx="370" cy="175" r="22" fill="#20a37a"/>
-  <text x="420" y="115" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#1c2d45">Maploom image test</text>
-  <text x="420" y="151" font-family="Arial, sans-serif" font-size="18" fill="#40536b">Local SVG asset</text>
+  <text x="390" y="112" font-family="Arial, sans-serif" font-size="23" font-weight="700" fill="#1c2d45">Maploom image test</text>
+  <text x="390" y="148" font-family="Arial, sans-serif" font-size="17" fill="#40536b">Local SVG asset</text>
 </svg>
