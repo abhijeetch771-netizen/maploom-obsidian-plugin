@@ -28,7 +28,7 @@ function inlineText(value: unknown): string {
 
 /**
  * Only expand a standalone whole-note embed paragraph. Section/block embeds
- * and inline mixed-content embeds remain visible as explanatory text rather
+ * and inline mixed-content embeds remain in their original text form rather
  * than being silently expanded as the wrong content.
  */
 function getEmbedReference(node: NoteTreeNode): EmbedReference | null {
@@ -120,8 +120,11 @@ export async function expandEmbeddedNotes(
 
         expandedCount += 1;
         visited.add(canonicalPath);
-        await visit(embeddedRoot, file.path, depth + 1);
-        visited.delete(canonicalPath);
+        try {
+          await visit(embeddedRoot, file.path, depth + 1);
+        } finally {
+          visited.delete(canonicalPath);
+        }
 
         const prefix = node.id + '-embedded-';
         markEmbeddedSubtree(embeddedRoot, prefix);
