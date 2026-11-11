@@ -211,21 +211,21 @@ function injectSourceAnchor(
   anchorId: string,
 ): string {
   const offset = Math.max(0, Math.min(markdown.length, location.start));
-  const lineStart = markdown.lastIndexOf('\\n', Math.max(0, offset - 1)) + 1;
-  const lineEndIndex = markdown.indexOf('\\n', offset);
+  const lineStart = markdown.lastIndexOf('\n', Math.max(0, offset - 1)) + 1;
+  const lineEndIndex = markdown.indexOf('\n', offset);
   const lineEnd = lineEndIndex < 0 ? markdown.length : lineEndIndex;
   const line = markdown.slice(lineStart, lineEnd);
-  const marker = `<span id="${anchorId}" class="maploom-source-anchor"></span>`;
+  const marker = \`<span id="\${anchorId}" class="maploom-source-anchor"></span>\`;
 
   // Preserve Markdown block syntax by inserting inline HTML after structural
   // prefixes (heading marks, list markers or blockquote marks).
-  const heading = line.match(/^(\\s{0,3}#{1,6}\\s+)/);
-  const quote = line.match(/^(\\s*(?:>\\s*)+)/);
-  const list = line.match(/^(\\s*(?:[-+*]|\\d+[.)])\\s+)/);
-  const isFence = /^\\s*(?:`{3,}|~{3,})/.test(line);
+  const heading = line.match(/^(\s{0,3}#{1,6}\s+)/);
+  const quote = line.match(/^(\s*(?:>\s*)+)/);
+  const list = line.match(/^(\s*(?:[-+*]|\d+[.)])\s+)/);
+  const isFence = /^\s*(?:\`{3,}|~{3,})/.test(line);
 
   if (isFence || location.type === 'noteCode') {
-    return markdown.slice(0, lineStart) + marker + '\\n\\n' + markdown.slice(lineStart);
+    return markdown.slice(0, lineStart) + marker + '\n\n' + markdown.slice(lineStart);
   }
 
   let insertAt = offset;
