@@ -14,15 +14,16 @@ A **Source note** toolbar command opens the complete original note in a native O
 
 The source note is not kept in a permanent side-by-side panel. Opening or closing its modal does not resize the map canvas. The user can close the modal and return to the full-size map. Since `MarkdownRenderer.render` does not attach Reading View's delegated internal-link click handlers in a standalone modal, Maploom registers a lifecycle-managed click handler on the modal content and routes internal links through `Workspace.openLinkText(linkText, sourcePath, Keymap.isModEvent(event))`.
 
-Markmap's grey-dot note markers and click-to-open note popovers are deliberately disabled. Attached block notes are materialized into ordinary child branches beneath their owning node. A Show notes / Hide notes control toggles these branches; notes are shown by default. Essential note content is therefore visible in the graph without per-node markers, while the Source note modal remains available for full Obsidian formatting.
+Markmap's grey-dot note markers and click-to-open note popovers are deliberately disabled. Attached paragraphs, code blocks, blockquotes and lists are materialized into ordinary child branches beneath their owning node. Markdown tables are represented by a custom inline atom that draws a true grid-shaped SVG table inside one map node, preserving header cells, column boundaries, wrapped text and left/center/right alignment. A Show notes / Hide notes control toggles these materialized notes; notes are shown by default. The Source note modal remains available for full Obsidian formatting and semantic HTML tables.
 
 ## Initial pipeline
 
 1. Obsidian identifies the active Markdown file.
 2. Maploom reads it through the Vault API.
 3. `@markmap/parse` converts Markdown into a Markmap tree, with the math parser plugin enabled.
-4. `@markmap/view` renders the structural tree into interactive SVG. The `noteContent` plugin is deliberately omitted.
-6. When requested, the Source note modal uses Obsidian's `MarkdownRenderer.render` with the normalized source path and a managed `Component` lifecycle.
+4. Markdown table blocks are transformed into custom table atoms, while local Markdown images and Obsidian image embeds are resolved to vault resource URLs.
+5. `@markmap/view` renders the structural tree, note branches, SVG table grids and image primitives into interactive SVG. The `noteContent` plugin is deliberately omitted.
+6. When requested, the Source note modal uses Obsidian's `MarkdownRenderer.render` with the normalized source path and a managed `Component` lifecycle. This is the full-fidelity view for Obsidian syntax and semantic HTML tables.
 7. Maploom manages the view lifecycle, controls and refresh when the active file changes.
 
 ## Module boundaries
