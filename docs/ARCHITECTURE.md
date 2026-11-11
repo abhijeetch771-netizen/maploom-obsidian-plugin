@@ -22,6 +22,16 @@ Each Markdown AST node receives a temporary `data.maploomSourcePosition` value b
 
 On map clicks, Maploom uses Markmap's `hitAt` API to distinguish ordinary nodes from fold toggles and links. For a source-linked node, it decorates a rendering-only copy of the Markdown with an invisible anchor at the recorded source offset. The Source note modal renders that copy, scrolls to the marker's containing block and briefly highlights it. The original vault file is neither rewritten nor saved. Wikilink clicks continue to navigate to the wikilink target; fold controls continue to fold/unfold instead of opening the source modal.
 
+## Obsidian note embeds
+
+A standalone whole-note block embed such as `![[Another Note]]` is expanded into a nested graph branch. Maploom resolves the target from the containing note's path through Obsidian's metadata cache, reads the target through the Vault API, and parses it with the same math, wikilink and image transformations as the active note. The original embed paragraph becomes a labelled container, and the imported Markmap tree is nested beneath it.
+
+Aliases in the embed syntax are used for the container label. Wikilinks inside the embedded note carry that note's source path in their internal Maploom link payload, so relative links resolve from the embedded file rather than the active host note. Local image embeds are resolved while parsing against the embedded file's path.
+
+The host embed paragraph retains its source offset, so clicking that container opens the host note at the embed syntax. Imported child nodes are deliberately marked as belonging to an embedded file and do not reuse their offsets as if they belonged to the host note. Their own source-navigation behaviour is not implemented yet.
+
+Expansion has cycle detection and limits on nesting depth and total embedded notes. The first implementation intentionally supports standalone whole-note block embeds only. Section/block embeds (for example `![[Note#Heading]]` or `![[Note#^block]]`) and mixed inline text-plus-embed paragraphs are not expanded; they produce an explanatory map node instead. Full Obsidian embed fidelity remains available in the Source note modal. CI and manual Obsidian verification of the graph expansion are pending.
+
 ## Initial pipeline
 
 1. Obsidian identifies the active Markdown file.
