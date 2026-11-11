@@ -11,6 +11,7 @@ export interface NoteBlock {
   lang?: string | null;
   alt?: string | null;
   children?: NoteBlock[];
+  data?: Record<string, unknown>;
 }
 
 export interface NoteEntry {
@@ -25,6 +26,7 @@ export interface NoteTreeNode {
   notes: NoteEntry[];
   data: Record<string, unknown>;
   children: NoteTreeNode[];
+  position?: { start: number; end: number };
 }
 
 function textNode(value: string): unknown {
@@ -94,10 +96,23 @@ function tableToNode(block: NoteBlock, id: string): NoteTreeNode {
   );
 }
 
+function withSourcePosition(node: NoteTreeNode, block: NoteBlock): NoteTreeNode {
+  const position = block.data?.maploomSourcePosition as
+    | { start?: unknown; end?: unknown }
+    | undefined;
+  if (typeof position?.start === 'number' && typeof position.end === 'number') {
+    node.position = { start: position.start, end: position.end };
+  }
+  return node;
+}
+
 function blockToNode(block: NoteBlock, id: string): NoteTreeNode {
   switch (block.type) {
     case 'paragraph':
-      return makeNode(id, 'noteParagraph', inlineContent(block), [], 'paragraph');
+      return withSourcePosition(
+        makeNode(id, 'noteParagraph', inlineContent(block), [], 'paragraph'),
+        block,
+      );
 
     case 'table':
       return tableToNode(block, id);
@@ -121,7 +136,7 @@ function blockToNode(block: NoteBlock, id: string): NoteTreeNode {
           'codeLine',
         ),
       );
-      return code;
+      return withSourcePosition(code, block);
     }
 
     case 'blockquote': {
@@ -135,7 +150,7 @@ function blockToNode(block: NoteBlock, id: string): NoteTreeNode {
       quote.children = (block.children ?? []).map((child, childIndex) =>
         blockToNode(child, id + '-quote-' + (childIndex + 1)),
       );
-      return quote;
+      return withSourcePosition(quote, block);
     }
 
     case 'list': {
@@ -143,13 +158,13 @@ function blockToNode(block: NoteBlock, id: string): NoteTreeNode {
       list.children = (block.children ?? []).map((item, itemIndex) => {
         const first = item.children?.[0];
         const label = first?.type === 'paragraph' ? inlineContent(first) : [textNode(plainText(item.children ?? []))];
-        const child = makeNode(
+        const child = withSourcePosition(makeNode(
           id + '-item-' + (itemIndex + 1),
           'noteListItem',
           label,
           [],
           'listItem',
-        );
+        ), item);
         child.children = (item.children ?? []).slice(1).map((nested, nestedIndex) =>
           blockToNode(nested, child.id + '-nested-' + (nestedIndex + 1)),
         );
@@ -159,11 +174,17 @@ function blockToNode(block: NoteBlock, id: string): NoteTreeNode {
     }
 
     case 'thematicBreak':
-      return makeNode(id, 'noteRule', [textNode('Horizontal rule')], [], 'rule');
+      return withSourcePosition(
+        makeNode(id, 'noteRule', [textNode('Horizontal rule')], [], 'rule'),
+        block,
+      );
 
     default: {
       const label = plainText(block.children ?? []) || block.value || block.type || 'Content';
-      return makeNode(id, 'noteContent', [textNode(label)], [], block.type ?? 'content');
+      return withSourcePosition(
+        makeNode(id, 'noteContent', [textNode(label)], [], block.type ?? 'content'),
+        block,
+      );
     }
   }
 }
