@@ -66,14 +66,71 @@ function plainText(nodes: NoteBlock[] = []): string {
   }).join('');
 }
 
-function rowContent(row: NoteBlock): unknown[] {
-  const cells = row.children ?? [];
-  const result: unknown[] = [];
-  cells.forEach((cell, index) => {
-    if (index) result.push(textNode('  |  '));
-    result.push(...inlineContent(cell));
+function rowLabel(
+  cell: NoteBlock | undefined,
+  header: string,
+  fallback: string,
+): unknown[] {
+  const value = cell ? inlineContent(cell) : [];
+  return [
+    textNode(header ? header + ': ' : fallback + ': '),
+    ...value,
+  ];
+}
+
+function tableToNode(block: NoteBlock, id: string): NoteTreeNode {
+  const rows = block.children ?? [];
+  const headerCells = rows[0]?.children ?? [];
+  const headers = headerCells.map((cell, index) => plainText(cell.children ?? []) || 'Column ' + (index + 1));
+  const dataRows = rows.slice(1);
+  const table = makeNode(
+    id,
+    'noteTable',
+    [textNode('Table · ' + dataRows.length + ' rows')],
+    [],
+    'table',
+  );
+
+  table.children = dataRows.map((row, rowIndex) => {
+    const cells = row.children ?? [];
+    const firstHeader = headers[0] ?? 'Column 1';
+    const firstCell = cells[0];
+    const rowNode = makeNode(
+      id + '-row-' + (rowIndex + 1),
+      'noteTableRow',
+      rowLabel(firstCell, firstHeader, 'Row ' + (rowIndex + 1)),
+      [],
+      'tableRow',
+    );
+
+    rowNode.children = cells.slice(1).map((cell, cellIndex) => {
+      const header = headers[cellIndex + 1] ?? 'Column ' + (cellIndex + 2);
+      return makeNode(
+        rowNode.id + '-cell-' + (cellIndex + 2),
+        'noteTableCell',
+        rowLabel(cell, header, header),
+        [],
+        'tableCell',
+      );
+    });
+
+    return rowNode;
   });
-  return result.length ? result : [textNode(plainText(cells))];
+
+  // A header-only table still exposes its column headings.
+  if (!dataRows.length && headers.length) {
+    table.children = headers.map((header, index) =>
+      makeNode(
+        id + '-header-' + (index + 1),
+        'noteTableHeader',
+        [textNode(header)],
+        [],
+        'tableHeader',
+      ),
+    );
+  }
+
+  return table;
 }
 
 function blockToNode(block: NoteBlock, id: string): NoteTreeNode {
@@ -81,26 +138,8 @@ function blockToNode(block: NoteBlock, id: string): NoteTreeNode {
     case 'paragraph':
       return makeNode(id, 'noteParagraph', inlineContent(block), [], 'paragraph');
 
-    case 'table': {
-      const rows = block.children ?? [];
-      const table = makeNode(
-        id,
-        'noteTable',
-        [textNode('Table · ' + Math.max(0, rows.length - 1) + ' data rows')],
-        [],
-        'table',
-      );
-      table.children = rows.map((row, rowIndex) =>
-        makeNode(
-          id + '-row-' + (rowIndex + 1),
-          'noteTableRow',
-          rowContent(row),
-          [],
-          rowIndex === 0 ? 'tableHeader' : 'tableRow',
-        ),
-      );
-      return table;
-    }
+    case 'table':
+      return tableToNode(block, id);
 
     case 'code': {
       const language = block.lang ? ' · ' + block.lang : '';
