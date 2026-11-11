@@ -6,27 +6,28 @@ Markdown in the vault remains the source of truth. Maploom parses it into a Mark
 
 ## Current view model
 
-The Maploom workspace has two coordinated regions:
+The Maploom workspace has one primary region:
 
-1. **Map canvas:** Markmap renders the structural outline, hierarchy and foldable branches.
-2. **Source-note panel:** Obsidian's `MarkdownRenderer.render` renders the complete original note beside the map, using the actual vault source path.
+1. **Map canvas:** Markmap renders the structural outline, hierarchy and foldable branches across the full available workspace.
 
-The source-note panel is visible by default and can be hidden to give the map more space. It replaces Markmap's grey-dot note markers and click-to-open note popovers. The map must not depend on popovers for access to content.
+A **Source note** toolbar command opens the complete original note in a native Obsidian modal, on demand. The modal uses Obsidian's `MarkdownRenderer.render` with the note's actual source path, so wikilinks, aliases, embeds, attachments, callouts, tables and other Obsidian-specific Markdown use Obsidian's own rendering pipeline.
 
-Using Obsidian's own renderer in the source panel is intentional: it gives the panel the native handling for wikilinks, aliases, embeds, attachments, callouts and other Obsidian-specific Markdown. Markmap remains responsible for the map structure, not for reimplementing every Obsidian rendering feature.
+The source note is not kept in a permanent side-by-side panel. Opening or closing its modal does not resize the map canvas. The user can close the modal and return to the full-size map.
+
+Markmap's grey-dot note markers and click-to-open note popovers are deliberately disabled. Essential note content is never hidden behind per-node markers.
 
 ## Initial pipeline
 
 1. Obsidian identifies the active Markdown file.
 2. Maploom reads it through the Vault API.
 3. `@markmap/parse` converts Markdown into a Markmap tree, with the math parser plugin enabled.
-4. `@markmap/view` renders the structural tree into interactive SVG. The `noteContent` plugin is deliberately omitted, so no grey-dot markers or note popovers are generated.
-5. Obsidian's `MarkdownRenderer.render` renders the unchanged source Markdown in the persistent companion panel, with the source file path supplied for resolving internal links and embeds.
+4. `@markmap/view` renders the structural tree into interactive SVG. The `noteContent` plugin is deliberately omitted.
+5. When requested, the Source note modal uses Obsidian's `MarkdownRenderer.render` with the normalized source path and a managed `Component` lifecycle.
 6. Maploom manages the view lifecycle, controls and refresh when the active file changes.
 
 ## Module boundaries
 
-- `views/`: workspace view, map canvas, source-note panel and UI controls.
+- `views/`: workspace view, map canvas, source-note modal and UI controls.
 - `core/`: parsing, tree transformations and map controller.
 - `content/`: Obsidian-specific links, embeds, attachment handling and content fidelity.
 - `settings/`: persisted settings and settings UI.
@@ -36,12 +37,14 @@ Using Obsidian's own renderer in the source panel is intentional: it gives the p
 ## Constraints
 
 - Never mutate Markdown merely to render it.
-- The original source note remains visible and accessible without opening per-node popovers.
-- Do not add grey-dot note markers or rely on interactive popovers for essential content.
-- The source-note panel must use Obsidian's rendering pipeline for Obsidian syntax.
+- The map canvas gets the full available workspace by default.
+- Do not add grey-dot note markers or rely on per-node popovers for essential content.
+- Source content is available on demand through the Source note modal.
+- The modal must not permanently reduce the map's viewport or zoom/pan area.
+- The source-note modal must use Obsidian's rendering pipeline for Obsidian syntax.
 - Formatted tables are a release-blocking requirement.
-- PDF export must include the map and full source-note content, including tables; it must not rely on grey dots or popovers.
-- Offline HTML export must bundle its required styles and assets locally.
+- PDF export must include the map and full source-note content, including tables; it must not rely on interactive UI.
+- Offline HTML export must bundle required styles and assets locally.
 - Do not use remote CDNs or send vault content to external services.
 - Do not assume Markmap resolves Obsidian wikilinks or embeds.
 - Defer visual editing until source mapping and conflict handling are designed.
@@ -63,4 +66,4 @@ Planned formats:
 
 ## API basis
 
-The current implementation uses `parse(markdown)`, `Markmap.create(svg, root, options)`, `setTree`, `fit`, `expandAll`, `foldAll`, and Obsidian's `MarkdownRenderer.render(app, markdown, element, sourcePath, component)`.
+The current implementation uses `parse(markdown)`, `Markmap.create(svg, root, options)`, `setTree`, `fit`, `expandAll`, `foldAll`, and Obsidian's `MarkdownRenderer.render(app, markdown, element, sourcePath, component)` inside a native `Modal`.
