@@ -2,50 +2,70 @@ import { App, ItemView, MarkdownView, Notice, TFile, WorkspaceLeaf } from 'obsid
 import { parse } from '@markmap/parse';
 import { mathContent, remarkMath } from '@markmap/plugin-math';
 import { defaultContentPlugins } from '@markmap/render';
-import { Markmap, resolveViewOptions } from '@markmap/view';
+import { Markmap, resolveViewOptions, type ViewOptions } from '@markmap/view';
 
-interface MarkdownAstNode {
-  type?: string;
-  url?: string;
-  children?: MarkdownAstNode[];
-}
+export const VIEW_TYPE_MAPLOOM = 'maploom-view';
 
 /**
- * Resolve relative Markdown image paths against the source note and convert
- * vault files into Obsidian resource URLs. This changes only the parsed AST;
- * the original Markdown note remains untouched.
+ * Resolve local Markdown images in a note popover.
+ *
+ * Markmap sanitizes Markdown-derived HTML before calling ContentPlugin.popover hooks.
+ * Resolving to Obsidian's app:// resource URL during parsing is therefore too early:
+ * the sanitizer removes that non-web protocol. This hook runs after sanitization and
+ * only rewrites an image when Obsidian can resolve it to a file in this vault.
  */
-function createObsidianImageResolver(app: App, sourcePath: string) {
-  return function remarkObsidianImageResolver() {
-    return function transform(tree: MarkdownAstNode): void {
-      const visit = (node: MarkdownAstNode): void => {
-        if (node.type === 'image' && typeof node.url === 'string') {
-          const url = node.url.trim();
-          const isExternal =
-            /^(https?:|data:|blob:|file:|app:|obsidian:)/i.test(url) || url.startsWith('//');
+function createObsidianImagePopoverPlugin(
+  app: App,
+  sourcePath: string,
+): NonNullable<ViewOptions['plugins']>[number] {
+  return {
+    name: 'obsidian-vault-images',
+    popover(tree) {
+      const visit = (node: unknown): void => {
+        if (!node || typeof node !== 'object') return;
 
-          if (url && !isExternal) {
-            let linkPath = url;
-            try {
-              linkPath = decodeURIComponent(url);
-            } catch {
-              // Keep the original path if it contains malformed URI escapes.
+        const item = node as {
+          type?: unknown;
+          tagName?: unknown;
+          properties?: Record<string, unknown>;
+          children?: unknown;
+        };
+
+        if (item.type === 'element' && item.tagName === 'img') {
+          const src = item.properties?.src;
+          if (typeof src === 'string' && src.trim()) {
+            const value = src.trim();
+            const isExternal =
+              /^(https?:|data:|blob:|file:|app:|obsidian:)/i.test(value) ||
+              value.startsWith('//');
+
+            if (!isExternal) {
+              let linkPath = value;
+              try {
+                linkPath = decodeURIComponent(value);
+              } catch {
+                // Keep the original link when URI decoding fails.
+              }
+
+              const file = app.metadataCache.getFirstLinkpathDest(linkPath, sourcePath);
+              if (file) item.properties!.src = app.vault.getResourcePath(file);
+              else {
+                console.warn('Maploom: local image could not be resolved', {
+                  sourcePath,
+                  linkPath,
+                });
+              }
             }
-
-            const file = app.metadataCache.getFirstLinkpathDest(linkPath, sourcePath);
-            if (file) node.url = app.vault.getResourcePath(file);
           }
         }
 
-        node.children?.forEach(visit);
+        if (Array.isArray(item.children)) item.children.forEach(visit);
       };
 
       visit(tree);
-    };
+    },
   };
 }
-
-export const VIEW_TYPE_MAPLOOM = 'maploom-view';
 
 export class MaploomView extends ItemView {
   private svg: SVGSVGElement | null = null;
@@ -111,10 +131,7 @@ export class MaploomView extends ItemView {
 
     try {
       const sourcePath = this.sourcePath;
-      const parsePlugins = sourcePath
-        ? [remarkMath, createObsidianImageResolver(this.app, sourcePath)]
-        : [remarkMath];
-      const { root, frontmatter } = parse(markdown, { plugins: parsePlugins });
+      const { root, frontmatter } = parse(markdown, { plugins: [remarkMath] });
       const { options, warnings } = resolveViewOptions(
         { colorScheme: 'auto' },
         frontmatter?.markmap,
@@ -126,7 +143,11 @@ export class MaploomView extends ItemView {
 
       const viewOptions = {
         ...options,
-        plugins: [...defaultContentPlugins, mathContent],
+        plugins: [
+          ...defaultContentPlugins,
+          mathContent,
+          ...(sourcePath ? [createObsidianImagePopoverPlugin(this.app, sourcePath)] : []),
+        ],
       };
 
       if (this.map) this.map.setTree(root, viewOptions);
