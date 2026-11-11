@@ -14,7 +14,7 @@
 - [x] Verify inline bold, italic, strikethrough and inline code in node-note popovers (manual Obsidian test, 2026-11-11).
 - [x] Verify external Markdown hyperlinks render as clickable links (manual Obsidian test, 2026-11-11).
 - [x] Verify a relative local SVG image resolves from the source note and renders in the node-note popover (manual Obsidian test, 2026-11-11).
-- [ ] Verify task-list popover content and checked state.
+- [x] Verify checked and unchecked GFM task-list markers render correctly in map nodes (manual Obsidian test, 2026-11-11).
 - [x] Verify `@markmap/plugin-math` renders an inline LaTeX equation in an Obsidian node-note popover (manual test, 2026-11-11).
 - [ ] Build regression fixtures.
 - [ ] Resolve Obsidian wikilinks and embeds safely; relative Markdown image attachment resolution is verified for a local SVG fixture.
