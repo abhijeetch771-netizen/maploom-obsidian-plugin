@@ -9,7 +9,7 @@
 
 ## Phase 1 — Rendering and content fidelity
 - [ ] Verify headings, lists, paragraphs, blockquotes and code.
-- [ ] Verify GFM tables render as formatted tables in node-note popovers.
+- [x] Verify a basic GFM table renders as a formatted table in a node-note popover (manual Obsidian test, 2026-11-11).
 - [ ] Verify inline formatting, links, images and task lists.
 - [ ] Add and verify math support.
 - [ ] Build regression fixtures.
