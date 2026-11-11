@@ -19,7 +19,9 @@
 - [ ] Build automated regression tests for Markdown/GFM rendering.
 - [ ] Manually verify the new map-label wikilink transformation: readable labels for standard, aliased and heading links, with navigation through `Workspace.openLinkText`.
 - [ ] Define how embedded notes and images are represented in map-node labels/notes without duplicating or losing source content.
-- [ ] Manually verify the new no-dot note materialization: paragraphs, formatted table rows, code lines, blockquotes and maths appear as child branches under their owning nodes.
+- [x] Manually verify no-dot note materialization: paragraph text, table row branches, code lines, blockquotes and maths appear under their owning nodes (Obsidian test, 2026-11-12).
+- [ ] Improve graph table presentation beyond pipe-separated row labels; preserve readable columns and alignment at practical zoom levels.
+- [ ] Add an inline image preview or a clear image-node treatment; the current graph branch shows the image alt text, while the Source note modal renders the actual image.
 - [ ] Verify Show notes / Hide notes toggling and confirm hiding notes does not restore grey dots.
 - [ ] Verify Obsidian-specific callouts, properties/frontmatter, block references and relative attachment paths.
 
