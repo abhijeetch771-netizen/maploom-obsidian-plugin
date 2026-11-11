@@ -18,7 +18,8 @@
 - [ ] Verify task-list checked state and content in source-note modal.
 - [ ] Build automated regression tests for Markdown/GFM rendering.
 - [ ] Manually verify the new map-label wikilink transformation: readable labels for standard, aliased and heading links, with navigation through `Workspace.openLinkText`.
-- [ ] Define how embedded notes are represented in map-node labels/notes without duplicating or losing source content; graph image embeds are verified, but `![[Note]]` currently remains literal text in the graph.
+- [ ] Verify whole-note block embeds (`![[Note]]`) expand into nested graph branches, including nested embeds, aliases, path-aware wikilinks/images, cycle protection and Show notes / Hide notes behaviour (implementation committed; CI and manual validation pending).
+- [ ] Extend graph expansion to section/block embeds (`![[Note#Heading]]`, `![[Note#^block]]`) and mixed inline embeds; these are intentionally not included in the first implementation.
 - [x] Manually verify no-dot note materialization: paragraph text, table row branches, code lines, blockquotes and maths appear under their owning nodes (Obsidian test, 2026-11-12).
 - [x] Verify the interim hierarchical table representation before replacing it with a proper grid (manual Obsidian test, 2026-11-12; superseded).
 - [x] Implement a grid-shaped SVG table atom with distinct header cells, cell borders, wrapped text, and preserved Markdown column alignment (GitHub CI, 2026-11-12; manual Obsidian verification pending).
