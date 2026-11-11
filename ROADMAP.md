@@ -37,9 +37,9 @@
 - [x] Verify embedded notes render their headings, paragraphs, tables and blockquotes in the Source note modal (manual test, 2026-11-11).
 - [x] Verify Obsidian image embeds and ordinary Markdown local images render in the Source note modal (manual test, 2026-11-11).
 - [x] Verify internal-link click navigation for standard, aliased and heading links from the Source note modal through `Workspace.openLinkText` (manual test, 2026-11-11).
-- [x] Implement map-to-source navigation for the active note: Markmap hit-testing identifies the clicked node; preserved mdast offsets locate the exact source block; the Source note modal opens at that block, scrolls it into view and temporarily highlights it. Original Markdown is not modified (GitHub CI, 2026-11-12; manual test pending).
-- [ ] Manually verify map-to-source navigation for a heading, paragraph, list item, table and code block in Obsidian; confirm closing the modal returns to the unchanged map view.
-- [ ] Specifically verify code-block navigation highlights the `<pre>` element itself, not the blank anchor paragraph immediately before the fenced block.
+- [x] Implement map-to-source navigation for the active note: Markmap hit-testing identifies the clicked node; preserved mdast offsets locate the exact source block; the Source note modal opens at that block, scrolls it into view and temporarily highlights it. Original Markdown is not modified (GitHub CI, 2026-11-12; code-block navigation manually confirmed by user, 2026-11-12; remaining node types pending).
+- [ ] Manually verify map-to-source navigation for a heading, paragraph, list item and table in Obsidian; confirm closing the modal returns to the unchanged map view (code-block targeting separately verified, 2026-11-12).
+- [x] Specifically verify code-block navigation highlights the rendered `<pre>` element itself, not the blank anchor paragraph immediately before the fenced block (manual Obsidian test; user confirmed, 2026-11-12).
 - [ ] Live updates while editing the source note.
 - [ ] Persist map display preferences.
 - [ ] Settings tab for map and rendering options.
