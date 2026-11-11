@@ -256,6 +256,7 @@ class SourceNoteModal extends Modal {
     private readonly markdown: string,
     private readonly sourcePath: string,
     private readonly targetAnchorId?: string,
+    private readonly targetNodeType?: string,
   ) {
     super(app);
     this.modalEl.addClass('maploom-source-modal');
@@ -301,9 +302,15 @@ class SourceNoteModal extends Modal {
           '#' + this.targetAnchorId,
         ) as HTMLElement | null;
         if (marker) {
-          const target = marker.closest(
+          let target = marker.closest(
             'h1,h2,h3,h4,h5,h6,p,li,blockquote,td,th,pre',
           ) as HTMLElement | null ?? marker;
+
+          if (this.targetNodeType === 'noteCode') {
+            const next = marker.nextElementSibling ?? marker.parentElement?.nextElementSibling;
+            if (next instanceof HTMLElement && next.matches('pre')) target = next;
+          }
+
           target.classList.add('maploom-source-highlight');
           target.scrollIntoView({ behavior: 'smooth', block: 'center' });
           this.highlightTimeout = window.setTimeout(() => {
@@ -459,6 +466,7 @@ export class MaploomView extends ItemView {
     this.svg = null;
     this.sourceMarkdown = null;
     this.sourcePath = null;
+    this.sourceLocations.clear();
   }
 
   async setSourceFile(file: TFile): Promise<void> {
@@ -491,7 +499,7 @@ export class MaploomView extends ItemView {
     if (!this.sourceMarkdown || !this.sourcePath) return;
     const anchorId = 'maploom-source-target-' + (++this.sourceAnchorSequence);
     const decorated = injectSourceAnchor(this.sourceMarkdown, location, anchorId);
-    new SourceNoteModal(this.app, decorated, this.sourcePath, anchorId).open();
+    new SourceNoteModal(this.app, decorated, this.sourcePath, anchorId, location.type).open();
   }
 
   private async renderMarkdown(markdown: string): Promise<void> {
