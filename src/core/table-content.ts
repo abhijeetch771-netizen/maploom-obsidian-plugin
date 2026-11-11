@@ -13,6 +13,7 @@ interface TableInline {
   type: 'maploomTable';
   headers: string[];
   rows: string[][];
+  align?: Array<'left' | 'right' | 'center' | null>;
 }
 
 interface GridLayout {
@@ -105,7 +106,7 @@ function computeGrid(
   });
 
   const total = widths.reduce((sum, width) => sum + width, 0);
-  if (total > MAX_TABLE_WIDTH) {
+  if (total > MAX_TABLE_WIDTH && MIN_COLUMN_WIDTH * widths.length < MAX_TABLE_WIDTH) {
     const available = MAX_TABLE_WIDTH - MIN_COLUMN_WIDTH * widths.length;
     const extra = widths.map((width) => width - MIN_COLUMN_WIDTH);
     const extraTotal = extra.reduce((sum, width) => sum + width, 0) || 1;
@@ -175,14 +176,22 @@ const tableAtom: AtomRenderer = {
 
         const totalTextHeight = cellLines.length * CELL_LINE_HEIGHT;
         const firstBaseline = y + (rowHeight - totalTextHeight) / 2 + CELL_LINE_HEIGHT * 0.76;
+        const alignment = table.align?.[columnIndex] ?? 'left';
+        const anchor = alignment === 'right' ? 'end' : alignment === 'center' ? 'middle' : 'start';
+        const textX = alignment === 'right'
+          ? x + columnWidth - CELL_PADDING_X
+          : alignment === 'center'
+            ? x + columnWidth / 2
+            : x + CELL_PADDING_X;
         const tspans = cellLines.map((line, lineIndex) =>
-          '<tspan x="' + (x + CELL_PADDING_X).toFixed(2) +
+          '<tspan x="' + textX.toFixed(2) +
           '" y="' + (firstBaseline + lineIndex * CELL_LINE_HEIGHT).toFixed(2) +
           '">' + xml(line) + '</tspan>',
         ).join('');
 
         chunks.push(
-          '<text font-family="inherit" font-size="' + fontSize.toFixed(2) +
+          '<text text-anchor="' + anchor +
+          '" font-family="inherit" font-size="' + fontSize.toFixed(2) +
           '" font-weight="' + (isHeader ? '700' : '400') +
           '" fill="var(--mm-text)">' + tspans + '</text>',
         );
