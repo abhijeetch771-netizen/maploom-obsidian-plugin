@@ -12,14 +12,16 @@ import {
 } from 'obsidian';
 import { parse } from '@markmap/parse';
 import { mathContent, remarkMath } from '@markmap/plugin-math';
-import { basicContent, imageContent } from '@markmap/render';
+import { basicContent } from '@markmap/render';
 import { Markmap, resolveViewOptions } from '@markmap/view';
 import { materializeNoteBlocks, type NoteTreeNode } from '../core/note-nodes';
+import { createVaultImageContent } from '../core/image-content';
 
 interface RemarkNode {
   type?: string;
   value?: string;
   url?: string;
+  alt?: string;
   children?: RemarkNode[];
 }
 
@@ -86,6 +88,86 @@ function splitWikilinks(value: string, app: App, sourcePath: string): RemarkNode
       });
     }
 
+    from = end;
+  }
+
+  if (from < value.length) result.push({ type: 'text', value: value.slice(from) });
+  return result.length ? result : [{ type: 'text', value }];
+}
+
+
+const IMAGE_EXTENSIONS = new Set([
+  'png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'svg', 'bmp', 'ico',
+]);
+
+function resolveVaultImageSource(app: App, rawPath: string, sourcePath: string): string | null {
+  const value = rawPath.trim();
+  if (!value) return null;
+  if (/^(https?:|data:|app:|obsidian:)/i.test(value) || value.startsWith('//')) return value;
+
+  let decoded = value;
+  try {
+    decoded = decodeURIComponent(value);
+  } catch {
+    // Keep the path as written when it contains malformed escapes.
+  }
+
+  const target = decoded.split('|')[0].split('#')[0].trim();
+  const file = app.metadataCache.getFirstLinkpathDest(target, sourcePath);
+  if (!(file instanceof TFile) || !IMAGE_EXTENSIONS.has(file.extension.toLowerCase())) return null;
+  return app.vault.getResourcePath(file);
+}
+
+/**
+ * Resolve normal Markdown images and Obsidian ![[image]] embeds to vault
+ * resource URLs before Markmap lays out the tree.
+ */
+function createRemarkObsidianImages(app: App, sourcePath: string) {
+  return function remarkObsidianImages() {
+    return function transform(tree: RemarkNode): void {
+      const visit = (parent: RemarkNode): void => {
+        if (!Array.isArray(parent.children)) return;
+        if (parent.type === 'link' || parent.type === 'linkReference') return;
+
+        parent.children = parent.children.flatMap((child) => {
+          if (child.type === 'image' && typeof child.url === 'string') {
+            const resolved = resolveVaultImageSource(app, child.url, sourcePath);
+            if (resolved) child.url = resolved;
+            return [child];
+          }
+
+          if (child.type === 'text' && typeof child.value === 'string') {
+            return splitObsidianImageEmbeds(child.value, app, sourcePath);
+          }
+
+          visit(child);
+          return [child];
+        });
+      };
+      visit(tree);
+    };
+  };
+}
+
+function splitObsidianImageEmbeds(value: string, app: App, sourcePath: string): RemarkNode[] {
+  const pattern = /!\[\[([^\]]+)\]\]/g;
+  const result: RemarkNode[] = [];
+  let from = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(value))) {
+    const start = match.index;
+    const end = pattern.lastIndex;
+    const rawTarget = match[1].trim();
+    const target = rawTarget.split('|')[0].trim();
+    const resolved = resolveVaultImageSource(app, target, sourcePath);
+
+    if (!resolved) continue;
+
+    if (start > from) result.push({ type: 'text', value: value.slice(from, start) });
+    const filename = target.split('/').filter(Boolean).pop() ?? target;
+    const alt = filename.replace(/\.[^.]+$/, '');
+    result.push({ type: 'image', url: resolved, alt });
     from = end;
   }
 
@@ -166,6 +248,7 @@ export class MaploomView extends ItemView {
   private sourcePath: string | null = null;
   private sourceMarkdown: string | null = null;
   private showNoteContent = true;
+  private readonly vaultImageContent = createVaultImageContent();
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
@@ -290,7 +373,11 @@ export class MaploomView extends ItemView {
 
     try {
       const parsePlugins = this.sourcePath
-        ? [remarkMath, createRemarkObsidianWikilinks(this.app, this.sourcePath)]
+        ? [
+            remarkMath,
+            createRemarkObsidianWikilinks(this.app, this.sourcePath),
+            createRemarkObsidianImages(this.app, this.sourcePath),
+          ]
         : [remarkMath];
       const { root, frontmatter } = parse(markdown, { plugins: parsePlugins });
       // Materialize attached block notes as visible child branches. This keeps
@@ -310,7 +397,7 @@ export class MaploomView extends ItemView {
       // the Source note modal and will be included directly in exports.
       const viewOptions = {
         ...options,
-        plugins: [basicContent, imageContent, mathContent],
+        plugins: [basicContent, mathContent, this.vaultImageContent],
       };
 
       if (this.map) this.map.setTree(root, viewOptions);
