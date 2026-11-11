@@ -85,6 +85,14 @@ export async function expandEmbeddedNotes(
     const reference = getEmbedReference(node);
 
     if (reference) {
+      if (reference.linkpath.includes('#') || reference.linkpath.includes('^')) {
+        setEmbedMessage(
+          node,
+          'Section and block embeds are not yet supported: ' + reference.linkpath,
+        );
+        return;
+      }
+
       const file = options.app.metadataCache.getFirstLinkpathDest(
         reference.linkpath,
         currentPath,
