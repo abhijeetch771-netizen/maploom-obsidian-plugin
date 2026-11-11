@@ -1,8 +1,49 @@
-import { ItemView, MarkdownView, Notice, TFile, WorkspaceLeaf } from 'obsidian';
+import { App, ItemView, MarkdownView, Notice, TFile, WorkspaceLeaf } from 'obsidian';
 import { parse } from '@markmap/parse';
 import { mathContent, remarkMath } from '@markmap/plugin-math';
 import { defaultContentPlugins } from '@markmap/render';
 import { Markmap, resolveViewOptions } from '@markmap/view';
+
+interface MarkdownAstNode {
+  type?: string;
+  url?: string;
+  children?: MarkdownAstNode[];
+}
+
+/**
+ * Resolve relative Markdown image paths against the source note and convert
+ * vault files into Obsidian resource URLs. This changes only the parsed AST;
+ * the original Markdown note remains untouched.
+ */
+function createObsidianImageResolver(app: App, sourcePath: string) {
+  return function remarkObsidianImageResolver() {
+    return function transform(tree: MarkdownAstNode): void {
+      const visit = (node: MarkdownAstNode): void => {
+        if (node.type === 'image' && typeof node.url === 'string') {
+          const url = node.url.trim();
+          const isExternal =
+            /^(https?:|data:|blob:|file:|app:|obsidian:)/i.test(url) || url.startsWith('//');
+
+          if (url && !isExternal) {
+            let linkPath = url;
+            try {
+              linkPath = decodeURIComponent(url);
+            } catch {
+              // Keep the original path if it contains malformed URI escapes.
+            }
+
+            const file = app.metadataCache.getFirstLinkpathDest(linkPath, sourcePath);
+            if (file) node.url = app.vault.getResourcePath(file);
+          }
+        }
+
+        node.children?.forEach(visit);
+      };
+
+      visit(tree);
+    };
+  };
+}
 
 export const VIEW_TYPE_MAPLOOM = 'maploom-view';
 
@@ -69,7 +110,11 @@ export class MaploomView extends ItemView {
     if (!this.svg) return;
 
     try {
-      const { root, frontmatter } = parse(markdown, { plugins: [remarkMath] });
+      const sourcePath = this.sourcePath;
+      const parsePlugins = sourcePath
+        ? [remarkMath, createObsidianImageResolver(this.app, sourcePath)]
+        : [remarkMath];
+      const { root, frontmatter } = parse(markdown, { plugins: parsePlugins });
       const { options, warnings } = resolveViewOptions(
         { colorScheme: 'auto' },
         frontmatter?.markmap,
