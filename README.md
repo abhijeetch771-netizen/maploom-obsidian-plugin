@@ -13,6 +13,7 @@ Maploom is an open-source Obsidian plugin that turns Markdown notes into interac
 - Fit, expand-all and fold-all controls.
 - Automatic light/dark colour-scheme selection.
 - No grey-dot note markers or click-to-open note popovers.
+- Obsidian wikilinks in map labels are converted to readable link labels and routed through Obsidian navigation.
 - The map occupies the full Maploom workspace.
 - A **Source note** toolbar button opens the complete original note in an on-demand Obsidian modal. The modal uses Obsidian's Markdown renderer for vault-native links, embeds, attachments, tables and other Obsidian Markdown features. Opening it does not reduce the map viewport.
 
@@ -47,7 +48,7 @@ See [ROADMAP.md](ROADMAP.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 The early prototype has passed a local Windows build, GitHub Actions build, and manual rendering checks for tables, code, blockquotes, math, inline formatting, external links and a relative local SVG image.
 
-The on-demand Source note modal and Obsidian-native wikilink/embed fixture still require manual validation in a disposable Obsidian vault. Export functionality is planned but not implemented. Do not treat this prototype as an installable public release.
+The on-demand Source note modal, including internal-link click navigation, has been manually tested. The newly added wikilink conversion and navigation in map labels still require manual validation in a disposable Obsidian vault. Export functionality is planned but not implemented. Do not treat this prototype as an installable public release.
 
 ## Privacy and source integrity
 
