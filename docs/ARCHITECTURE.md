@@ -14,7 +14,7 @@ A **Source note** toolbar command opens the complete original note in a native O
 
 The source note is not kept in a permanent side-by-side panel. Opening or closing its modal does not resize the map canvas. The user can close the modal and return to the full-size map. Since `MarkdownRenderer.render` does not attach Reading View's delegated internal-link click handlers in a standalone modal, Maploom registers a lifecycle-managed click handler on the modal content and routes internal links through `Workspace.openLinkText(linkText, sourcePath, Keymap.isModEvent(event))`.
 
-Markmap's grey-dot note markers and click-to-open note popovers are deliberately disabled. Essential note content is never hidden behind per-node markers.
+Markmap's grey-dot note markers and click-to-open note popovers are deliberately disabled. Attached block notes are materialized into ordinary child branches beneath their owning node. A Show notes / Hide notes control toggles these branches; notes are shown by default. Essential note content is therefore visible in the graph without per-node markers, while the Source note modal remains available for full Obsidian formatting.
 
 ## Initial pipeline
 
@@ -22,8 +22,8 @@ Markmap's grey-dot note markers and click-to-open note popovers are deliberately
 2. Maploom reads it through the Vault API.
 3. `@markmap/parse` converts Markdown into a Markmap tree, with the math parser plugin enabled.
 4. `@markmap/view` renders the structural tree into interactive SVG. The `noteContent` plugin is deliberately omitted.
-5. When requested, the Source note modal uses Obsidian's `MarkdownRenderer.render` with the normalized source path and a managed `Component` lifecycle.
-6. Maploom manages the view lifecycle, controls and refresh when the active file changes.
+6. When requested, the Source note modal uses Obsidian's `MarkdownRenderer.render` with the normalized source path and a managed `Component` lifecycle.
+7. Maploom manages the view lifecycle, controls and refresh when the active file changes.
 
 ## Module boundaries
 
@@ -39,6 +39,7 @@ Markmap's grey-dot note markers and click-to-open note popovers are deliberately
 - Never mutate Markdown merely to render it.
 - The map canvas gets the full available workspace by default.
 - Do not add grey-dot note markers or rely on per-node popovers for essential content.
+- Attached Markdown blocks must be represented as visible child branches by default; readers may hide these branches to reduce map density.
 - Source content is available on demand through the Source note modal.
 - The modal must not permanently reduce the map's viewport or zoom/pan area.
 - The source-note modal must use Obsidian's rendering pipeline for Obsidian syntax.
