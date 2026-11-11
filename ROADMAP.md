@@ -17,14 +17,18 @@
 - [x] Verify `@markmap/plugin-math` renders an inline LaTeX equation (manual Obsidian test, 2026-11-11).
 - [ ] Verify task-list checked state and content in source-note modal.
 - [ ] Build automated regression tests for Markdown/GFM rendering.
-- [ ] Resolve Obsidian wikilinks, aliases, heading links, note embeds, image embeds and attachments in a disposable vault.
+- [ ] Convert Obsidian wikilinks in map-node labels into readable labels and actionable internal navigation; avoid showing raw `[[...]]` syntax in the graph.
+- [ ] Define how embedded notes and images are represented in map-node labels/notes without duplicating or losing source content.
 - [ ] Verify Obsidian-specific callouts, properties/frontmatter, block references and relative attachment paths.
 
 ## Phase 2 — Obsidian integration and note access
 - [x] Adopt a no-grey-dot interaction model: omit Markmap note markers and popovers.
 - [x] Make the map canvas use the full available workspace by default.
 - [x] Add an on-demand Source note modal using Obsidian's MarkdownRenderer; opening it does not resize the map canvas.
-- [ ] Manually verify wikilinks, aliased links, heading links, note embeds and image embeds in the Source note modal.
+- [x] Verify standard wikilinks, aliased wikilinks and heading links render as Obsidian links in the Source note modal (manual test, 2026-11-11; click navigation still to be tested).
+- [x] Verify embedded notes render their headings, paragraphs, tables and blockquotes in the Source note modal (manual test, 2026-11-11).
+- [x] Verify Obsidian image embeds and ordinary Markdown local images render in the Source note modal (manual test, 2026-11-11).
+- [ ] Verify internal-link click navigation for standard, aliased and heading links.
 - [ ] Add map-to-source navigation: selecting/focusing a map heading opens the source note and scrolls to the corresponding section.
 - [ ] Live updates while editing the source note.
 - [ ] Persist map display preferences.
