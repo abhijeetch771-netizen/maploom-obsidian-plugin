@@ -1,9 +1,17 @@
-import type { ContentPlugin, Inline, InlineContext, Primitive, Size, TextStyle } from '@markmap/core';
+import type {
+  ContentPlugin,
+  Inline,
+  InlineContext,
+  Primitive,
+  Rect,
+  Size,
+  TextStyle,
+} from '@markmap/core';
 
 type ImageInline = Extract<Inline, { type: 'image' }>;
 
 const MAX_WIDTH = 150;
-const MAX_HEIGHT = 100;
+const MAX_HEIGHT = 96;
 const PLACEHOLDER: Size = { width: 96, height: 64 };
 
 function safeImageSource(src: string): boolean {
@@ -13,11 +21,13 @@ function safeImageSource(src: string): boolean {
   );
 }
 
-function fallbackText(
-  alt: string,
-  box: { x: number; y: number },
-  style: TextStyle,
-): Primitive[] {
+function fit(size: Size): Size {
+  if (!size.width || !size.height) return PLACEHOLDER;
+  const scale = Math.min(1, MAX_WIDTH / size.width, MAX_HEIGHT / size.height);
+  return { width: size.width * scale, height: size.height * scale };
+}
+
+function fallbackText(alt: string, box: Rect, style: TextStyle): Primitive[] {
   if (!alt) return [];
   const baseline = (style.font.lineHeight + style.font.size * 0.7) / 2;
   return [{
@@ -34,18 +44,12 @@ function fallbackText(
   }];
 }
 
-function fit(size: Size): Size {
-  const scale = Math.min(1, MAX_WIDTH / size.width, MAX_HEIGHT / size.height);
-  return { width: size.width * scale, height: size.height * scale };
-}
-
 /**
- * Image content for Obsidian resource URLs.
+ * Image atom for Obsidian resource URLs.
  *
- * Markmap's built-in image plugin intentionally rejects app:// URLs. This plugin
- * accepts only web URLs, Obsidian resource URLs and safe raster data URLs, then
- * draws SVG image primitives directly. Image dimensions are loaded asynchronously
- * so the map can reserve a placeholder and re-layout when the image is ready.
+ * Markmap's default image plugin rejects app:// URLs. This plugin accepts
+ * Obsidian resource URLs and safe web/data image URLs, measures them in the
+ * browser, and draws SVG image primitives directly in map labels.
  */
 export function createVaultImageContent(): ContentPlugin {
   const sizes = new Map<string, Size | null>();
@@ -78,7 +82,7 @@ export function createVaultImageContent(): ContentPlugin {
     name: 'maploom-vault-images',
     atoms: {
       image: {
-        measure(inline: ImageInline, style, ctx): { width: number; height: number; baseline: number } {
+        measure(inline: ImageInline, style, ctx) {
           const src = inline.url.trim();
           if (!safeImageSource(src)) {
             return {
@@ -88,13 +92,13 @@ export function createVaultImageContent(): ContentPlugin {
             };
           }
 
-          const natural = sizes.get(src);
           if (!sizes.has(src)) load(src, ctx);
+          const natural = sizes.get(src);
           const size = natural ? fit(natural) : PLACEHOLDER;
           return { ...size, baseline: size.height };
         },
 
-        render(inline: ImageInline, box, style): Primitive[] {
+        render(inline: ImageInline, box: Rect, style): Primitive[] {
           const src = inline.url.trim();
           if (!safeImageSource(src) || sizes.get(src) === null) {
             return fallbackText(inline.alt ?? '[image]', box, style);
