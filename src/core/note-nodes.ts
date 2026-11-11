@@ -87,13 +87,13 @@ function tableToNode(block: NoteBlock, id: string): NoteTreeNode {
     align: (block as NoteBlock & { align?: Array<'left' | 'right' | 'center' | null> }).align ?? [],
   };
 
-  return makeNode(
+  return withSourcePosition(makeNode(
     id,
     'noteTable',
     [tableInline],
     [],
     'table',
-  );
+  ), block);
 }
 
 function withSourcePosition(node: NoteTreeNode, block: NoteBlock): NoteTreeNode {
