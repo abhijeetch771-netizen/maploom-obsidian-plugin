@@ -23,6 +23,11 @@ interface RemarkNode {
   value?: string;
   url?: string;
   alt?: string;
+  position?: {
+    start?: { offset?: number };
+    end?: { offset?: number };
+  };
+  data?: Record<string, unknown>;
   children?: RemarkNode[];
 }
 
@@ -176,6 +181,65 @@ function splitObsidianImageEmbeds(value: string, app: App, sourcePath: string): 
   return result.length ? result : [{ type: 'text', value }];
 }
 
+interface SourceLocation {
+  start: number;
+  end: number;
+  type: string;
+}
+
+/** Preserve mdast offsets through Markmap's note-block position stripping. */
+function remarkCaptureSourcePositions() {
+  return function transform(tree: RemarkNode): void {
+    const visit = (node: RemarkNode): void => {
+      const start = node.position?.start?.offset;
+      const end = node.position?.end?.offset;
+      if (typeof start === 'number' && typeof end === 'number') {
+        node.data = {
+          ...(node.data ?? {}),
+          maploomSourcePosition: { start, end },
+        };
+      }
+      node.children?.forEach(visit);
+    };
+    visit(tree);
+  };
+}
+
+function injectSourceAnchor(
+  markdown: string,
+  location: SourceLocation,
+  anchorId: string,
+): string {
+  const offset = Math.max(0, Math.min(markdown.length, location.start));
+  const lineStart = markdown.lastIndexOf('\\n', Math.max(0, offset - 1)) + 1;
+  const lineEndIndex = markdown.indexOf('\\n', offset);
+  const lineEnd = lineEndIndex < 0 ? markdown.length : lineEndIndex;
+  const line = markdown.slice(lineStart, lineEnd);
+  const marker = `<span id="${anchorId}" class="maploom-source-anchor"></span>`;
+
+  // Preserve Markdown block syntax by inserting inline HTML after structural
+  // prefixes (heading marks, list markers or blockquote marks).
+  const heading = line.match(/^(\\s{0,3}#{1,6}\\s+)/);
+  const quote = line.match(/^(\\s*(?:>\\s*)+)/);
+  const list = line.match(/^(\\s*(?:[-+*]|\\d+[.)])\\s+)/);
+  const isFence = /^\\s*(?:`{3,}|~{3,})/.test(line);
+
+  if (isFence || location.type === 'noteCode') {
+    return markdown.slice(0, lineStart) + marker + '\\n\\n' + markdown.slice(lineStart);
+  }
+
+  let insertAt = offset;
+  if (heading) insertAt = lineStart + heading[1].length;
+  else if (quote) insertAt = lineStart + quote[1].length;
+  else if (list) insertAt = lineStart + list[1].length;
+  else if (location.type === 'noteTable' || line.trimStart().startsWith('|')) {
+    const firstPipe = line.indexOf('|');
+    if (firstPipe >= 0) insertAt = lineStart + firstPipe + 1;
+  }
+
+  return markdown.slice(0, insertAt) + marker + markdown.slice(insertAt);
+}
+
 export const VIEW_TYPE_MAPLOOM = 'maploom-view';
 
 /**
@@ -185,11 +249,13 @@ export const VIEW_TYPE_MAPLOOM = 'maploom-view';
  */
 class SourceNoteModal extends Modal {
   private readonly rendererComponent = new Component();
+  private highlightTimeout: number | null = null;
 
   constructor(
     app: App,
     private readonly markdown: string,
     private readonly sourcePath: string,
+    private readonly targetAnchorId?: string,
   ) {
     super(app);
     this.modalEl.addClass('maploom-source-modal');
@@ -229,6 +295,25 @@ class SourceNoteModal extends Modal {
         this.sourcePath,
         this.rendererComponent,
       );
+
+      if (this.targetAnchorId) {
+        const marker = this.contentEl.querySelector(
+          '#' + this.targetAnchorId,
+        ) as HTMLElement | null;
+        if (marker) {
+          const target = marker.closest(
+            'h1,h2,h3,h4,h5,h6,p,li,blockquote,td,th,pre',
+          ) as HTMLElement | null ?? marker;
+          target.classList.add('maploom-source-highlight');
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          this.highlightTimeout = window.setTimeout(() => {
+            target.classList.remove('maploom-source-highlight');
+            this.highlightTimeout = null;
+          }, 2400);
+        } else {
+          console.warn('Maploom: source marker was not rendered', this.targetAnchorId);
+        }
+      }
     } catch (error) {
       console.error('Maploom source-note rendering failed', error);
       this.contentEl.createEl('p', {
@@ -238,6 +323,7 @@ class SourceNoteModal extends Modal {
   }
 
   onClose(): void {
+    if (this.highlightTimeout !== null) window.clearTimeout(this.highlightTimeout);
     this.rendererComponent.unload();
     this.contentEl.empty();
   }
@@ -250,6 +336,8 @@ export class MaploomView extends ItemView {
   private sourceMarkdown: string | null = null;
   private showNoteContent = true;
   private readonly vaultImageContent = createVaultImageContent();
+  private readonly sourceLocations = new Map<string, SourceLocation>();
+  private sourceAnchorSequence = 0;
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
@@ -312,24 +400,42 @@ export class MaploomView extends ItemView {
     // wikilink fragments through Obsidian instead of opening them in a browser.
     this.registerDomEvent(this.contentEl, 'click', (event: MouseEvent) => {
       if (event.button !== 0 || !(event.target instanceof Element)) return;
+
       const anchor = event.target.closest('a[href]');
       const href = anchor?.getAttribute('href') ?? '';
       const prefix = '#maploom-wikilink:';
-      if (!href.startsWith(prefix) || !this.sourcePath) return;
+
+      // Wikilinks inside labels navigate to their target; do not open the
+      // source note for those clicks.
+      if (href.startsWith(prefix) && this.sourcePath) {
+        event.preventDefault();
+        event.stopPropagation();
+        try {
+          const linkText = decodeURIComponent(href.slice(prefix.length));
+          void this.app.workspace.openLinkText(
+            linkText,
+            this.sourcePath,
+            Keymap.isModEvent(event),
+          );
+        } catch (error) {
+          console.error('Maploom wikilink navigation failed', error);
+          new Notice('Maploom could not open that internal link.');
+        }
+        return;
+      }
+
+      // Ordinary Markdown links keep their native behaviour.
+      if (anchor || !this.map || !this.sourceMarkdown || !this.sourcePath) return;
+
+      const hit = this.map.hitAt(...this.map.layoutPoint(event.clientX, event.clientY));
+      if (!hit || hit.kind !== 'node') return;
+
+      const location = this.sourceLocations.get(hit.nodeId);
+      if (!location) return;
 
       event.preventDefault();
       event.stopPropagation();
-      try {
-        const linkText = decodeURIComponent(href.slice(prefix.length));
-        void this.app.workspace.openLinkText(
-          linkText,
-          this.sourcePath,
-          Keymap.isModEvent(event),
-        );
-      } catch (error) {
-        console.error('Maploom wikilink navigation failed', error);
-        new Notice('Maploom could not open that internal link.');
-      }
+      this.openSourceNoteAt(location);
     }, true);
 
     await this.refreshFromActiveFile();
@@ -369,6 +475,13 @@ export class MaploomView extends ItemView {
     new SourceNoteModal(this.app, this.sourceMarkdown, this.sourcePath).open();
   }
 
+  private openSourceNoteAt(location: SourceLocation): void {
+    if (!this.sourceMarkdown || !this.sourcePath) return;
+    const anchorId = 'maploom-source-target-' + (++this.sourceAnchorSequence);
+    const decorated = injectSourceAnchor(this.sourceMarkdown, location, anchorId);
+    new SourceNoteModal(this.app, decorated, this.sourcePath, anchorId).open();
+  }
+
   private async renderMarkdown(markdown: string): Promise<void> {
     if (!this.svg) return;
 
@@ -380,10 +493,29 @@ export class MaploomView extends ItemView {
             createRemarkObsidianImages(this.app, this.sourcePath),
           ]
         : [remarkMath];
-      const { root, frontmatter } = parse(markdown, { plugins: parsePlugins });
+      const { root, frontmatter } = parse(markdown, {
+        plugins: [...parsePlugins, remarkCaptureSourcePositions],
+      });
       // Materialize attached block notes as visible child branches. This keeps
       // their content in the map and in future static exports without markers.
       if (this.showNoteContent) materializeNoteBlocks(root as unknown as NoteTreeNode);
+
+      this.sourceLocations.clear();
+      const collectSourceLocations = (node: NoteTreeNode): void => {
+        const position = node.position ?? (
+          node.data?.maploomSourcePosition as { start?: number; end?: number } | undefined
+        );
+        if (typeof position?.start === 'number' && typeof position.end === 'number') {
+          this.sourceLocations.set(node.id, {
+            start: position.start,
+            end: position.end,
+            type: node.type,
+          });
+        }
+        node.children.forEach(collectSourceLocations);
+      };
+      collectSourceLocations(root as unknown as NoteTreeNode);
+
       const { options, warnings } = resolveViewOptions(
         { colorScheme: 'auto' },
         frontmatter?.markmap,
