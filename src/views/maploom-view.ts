@@ -56,14 +56,54 @@ export class MaploomView extends ItemView {
     });
 
     const workspace = this.contentEl.createDiv({ cls: 'maploom-workspace' });
+    // Apply structural sizing here as well as in styles.css. This keeps both
+    // panes visible even when a theme or stylesheet cache overrides grid rules.
+    Object.assign(workspace.style, {
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0, 58fr) minmax(280px, 42fr)',
+      gridTemplateRows: 'minmax(0, 1fr)',
+      flex: '1 1 0',
+      width: '100%',
+      minWidth: '0',
+      minHeight: '0',
+      overflow: 'hidden',
+    });
+
     const mapPanel = workspace.createDiv({ cls: 'maploom-map-panel' });
+    Object.assign(mapPanel.style, {
+      position: 'relative',
+      minWidth: '0',
+      minHeight: '0',
+      overflow: 'hidden',
+    });
+
     this.svg = mapPanel.createSvg('svg', { cls: 'maploom-canvas' });
+    Object.assign(this.svg.style, {
+      display: 'block',
+      width: '100%',
+      height: '100%',
+    });
     this.svg.setAttribute('width', '100%');
     this.svg.setAttribute('height', '100%');
 
     this.sourcePanel = workspace.createDiv({ cls: 'maploom-source-panel' });
+    Object.assign(this.sourcePanel.style, {
+      display: 'flex',
+      flexDirection: 'column',
+      minWidth: '0',
+      minHeight: '0',
+      overflow: 'hidden',
+      borderLeft: '1px solid var(--background-modifier-border)',
+      background: 'var(--background-primary)',
+    });
     this.sourcePanel.createEl('div', { cls: 'maploom-source-heading', text: 'Source note' });
     this.sourceContent = this.sourcePanel.createDiv({ cls: 'maploom-source-content markdown-rendered' });
+    Object.assign(this.sourceContent.style, {
+      minHeight: '0',
+      overflow: 'auto',
+      padding: '14px 18px',
+      color: 'var(--text-normal)',
+    });
 
     await this.refreshFromActiveFile();
   }
@@ -95,10 +135,15 @@ export class MaploomView extends ItemView {
   private async renderSourceNote(markdown: string): Promise<void> {
     if (!this.sourceContent || !this.sourcePath) return;
     this.sourceContent.empty();
+    this.sourceContent.createEl('p', {
+      cls: 'maploom-source-status',
+      text: 'Rendering source note…',
+    });
 
     try {
       // Obsidian's renderer resolves wikilinks, embeds, attachments, callouts,
       // and vault-specific Markdown using the source note's actual path.
+      this.sourceContent.empty();
       await MarkdownRenderer.render(
         this.app,
         markdown,
