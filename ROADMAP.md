@@ -28,7 +28,7 @@
 - [x] Verify standard wikilinks, aliased wikilinks and heading links render as Obsidian links in the Source note modal (manual test, 2026-11-11; click navigation still to be tested).
 - [x] Verify embedded notes render their headings, paragraphs, tables and blockquotes in the Source note modal (manual test, 2026-11-11).
 - [x] Verify Obsidian image embeds and ordinary Markdown local images render in the Source note modal (manual test, 2026-11-11).
-- [ ] Verify internal-link click navigation for standard, aliased and heading links.
+- [ ] Verify internal-link click navigation for standard, aliased and heading links after adding explicit modal handlers through `Workspace.openLinkText`.
 - [ ] Add map-to-source navigation: selecting/focusing a map heading opens the source note and scrolls to the corresponding section.
 - [ ] Live updates while editing the source note.
 - [ ] Persist map display preferences.
