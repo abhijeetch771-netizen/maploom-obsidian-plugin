@@ -4,14 +4,15 @@
 - [x] TypeScript/Obsidian project structure.
 - [x] Integrate `@markmap/parse` and `@markmap/view`.
 - [x] Workspace view, ribbon icon and commands.
-- [ ] Install dependencies and verify production build.
-- [ ] Test in a disposable Obsidian vault.
+- [x] Install dependencies and verify production build (local Windows build and Node.js 26 CI, 2026-11-11).
+- [x] Open prototype in a disposable Obsidian vault (manual test, 2026-11-11).
 
 ## Phase 1 — Rendering and content fidelity
-- [ ] Verify headings, lists, paragraphs, blockquotes and code.
+- [x] Verify heading hierarchy, nested lists, task-list markers, blockquotes and code blocks in Obsidian (manual test, 2026-11-11).
+- [ ] Verify paragraph ownership and rendering across larger notes.
 - [x] Verify a basic GFM table renders as a formatted table in a node-note popover (manual Obsidian test, 2026-11-11).
 - [ ] Verify inline formatting, links, images and task lists.
-- [ ] Add and verify math support.
+- [ ] Verify newly integrated `@markmap/plugin-math` in Obsidian.
 - [ ] Build regression fixtures.
 - [ ] Resolve Obsidian wikilinks, embeds and asset paths safely.
 
