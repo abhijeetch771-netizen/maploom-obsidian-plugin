@@ -2,6 +2,7 @@ import {
   App,
   Component,
   ItemView,
+  Keymap,
   MarkdownRenderer,
   MarkdownView,
   Modal,
@@ -37,6 +38,27 @@ class SourceNoteModal extends Modal {
     this.setTitle('Source note');
     this.contentEl.addClass('maploom-source-content');
     this.rendererComponent.load();
+
+    // MarkdownRenderer.render() creates Obsidian-styled internal-link anchors,
+    // but a standalone Modal does not receive Reading View's delegated link
+    // handlers. Route clicks through Workspace.openLinkText() using this
+    // source note's path so relative wikilinks and heading links resolve.
+    this.rendererComponent.registerDomEvent(this.contentEl, 'click', (event: MouseEvent) => {
+      if (event.button !== 0) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const anchor = target.closest('a.internal-link') as HTMLAnchorElement | null;
+      const linkText = anchor?.getAttribute('href');
+      if (!linkText) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      void this.app.workspace.openLinkText(
+        linkText,
+        this.sourcePath,
+        Keymap.isModEvent(event),
+      );
+    });
 
     try {
       await MarkdownRenderer.render(
