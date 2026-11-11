@@ -215,7 +215,7 @@ function injectSourceAnchor(
   const lineEndIndex = markdown.indexOf('\n', offset);
   const lineEnd = lineEndIndex < 0 ? markdown.length : lineEndIndex;
   const line = markdown.slice(lineStart, lineEnd);
-  const marker = \`<span id="\${anchorId}" class="maploom-source-anchor"></span>\`;
+  const marker = '<span id="' + anchorId + '" class="maploom-source-anchor"></span>';
 
   // Preserve Markdown block syntax by inserting inline HTML after structural
   // prefixes (heading marks, list markers or blockquote marks).
