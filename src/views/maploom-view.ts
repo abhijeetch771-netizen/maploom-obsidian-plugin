@@ -15,6 +15,83 @@ import { mathContent, remarkMath } from '@markmap/plugin-math';
 import { basicContent, imageContent } from '@markmap/render';
 import { Markmap, resolveViewOptions } from '@markmap/view';
 
+interface RemarkNode {
+  type?: string;
+  value?: string;
+  url?: string;
+  children?: RemarkNode[];
+}
+
+/**
+ * Convert Obsidian wikilinks in Markdown labels to Markmap link nodes.
+ * The special fragment URL is intercepted by the SVG click handler below
+ * and routed through Obsidian's own link resolver.
+ */
+function createRemarkObsidianWikilinks(app: App, sourcePath: string) {
+  return function remarkObsidianWikilinks() {
+    return function transform(tree: RemarkNode): void {
+      const visit = (parent: RemarkNode): void => {
+        if (!Array.isArray(parent.children)) return;
+        if (parent.type === 'link' || parent.type === 'linkReference') return;
+
+        parent.children = parent.children.flatMap((child) => {
+          if (child.type === 'text' && typeof child.value === 'string') {
+            return splitWikilinks(child.value, app, sourcePath);
+          }
+          visit(child);
+          return [child];
+        });
+      };
+
+      visit(tree);
+    };
+  };
+}
+
+function splitWikilinks(value: string, app: App, sourcePath: string): RemarkNode[] {
+  const pattern = /\\[\\[([^\\]\\n]+)\\]\\]/g;
+  const result: RemarkNode[] = [];
+  let from = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(value))) {
+    const start = match.index;
+    const end = pattern.lastIndex;
+
+    // Do not turn an Obsidian embed (![[...]]), which has its own renderer,
+    // into a map-label hyperlink.
+    if (start > 0 && value[start - 1] === '!') continue;
+
+    if (start > from) result.push({ type: 'text', value: value.slice(from, start) });
+
+    const raw = match[1].trim();
+    const separator = raw.indexOf('|');
+    const target = (separator < 0 ? raw : raw.slice(0, separator)).trim();
+    const alias = separator < 0 ? '' : raw.slice(separator + 1).trim();
+
+    if (!target) {
+      result.push({ type: 'text', value: match[0] });
+    } else {
+      const pathPart = target.split('#')[0].split('^')[0].trim();
+      const resolved = app.metadataCache.getFirstLinkpathDest(pathPart || sourcePath, sourcePath);
+      const fallback = pathPart.split('/').filter(Boolean).pop()?.replace(/\\.md$/i, '');
+      const headingOnly = target.startsWith('#') ? target.slice(1) : '';
+      const label = alias || resolved?.basename || fallback || headingOnly || target;
+
+      result.push({
+        type: 'link',
+        url: `#maploom-wikilink:${encodeURIComponent(target)}`,
+        children: [{ type: 'text', value: label }],
+      });
+    }
+
+    from = end;
+  }
+
+  if (from < value.length) result.push({ type: 'text', value: value.slice(from) });
+  return result.length ? result : [{ type: 'text', value }];
+}
+
 export const VIEW_TYPE_MAPLOOM = 'maploom-view';
 
 /**
@@ -137,6 +214,30 @@ export class MaploomView extends ItemView {
     this.svg.setAttribute('width', '100%');
     this.svg.setAttribute('height', '100%');
 
+    // Markmap emits SVG anchors for linked label text. Route our special
+    // wikilink fragments through Obsidian instead of opening them in a browser.
+    this.registerDomEvent(this.svg, 'click', (event: MouseEvent) => {
+      if (event.button !== 0 || !(event.target instanceof Element)) return;
+      const anchor = event.target.closest('a[href]');
+      const href = anchor?.getAttribute('href') ?? '';
+      const prefix = '#maploom-wikilink:';
+      if (!href.startsWith(prefix) || !this.sourcePath) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      try {
+        const linkText = decodeURIComponent(href.slice(prefix.length));
+        void this.app.workspace.openLinkText(
+          linkText,
+          this.sourcePath,
+          Keymap.isModEvent(event),
+        );
+      } catch (error) {
+        console.error('Maploom wikilink navigation failed', error);
+        new Notice('Maploom could not open that internal link.');
+      }
+    }, true);
+
     await this.refreshFromActiveFile();
   }
 
@@ -178,7 +279,10 @@ export class MaploomView extends ItemView {
     if (!this.svg) return;
 
     try {
-      const { root, frontmatter } = parse(markdown, { plugins: [remarkMath] });
+      const parsePlugins = this.sourcePath
+        ? [remarkMath, createRemarkObsidianWikilinks(this.app, this.sourcePath)]
+        : [remarkMath];
+      const { root, frontmatter } = parse(markdown, { plugins: parsePlugins });
       const { options, warnings } = resolveViewOptions(
         { colorScheme: 'auto' },
         frontmatter?.markmap,
