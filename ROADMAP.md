@@ -22,7 +22,7 @@
 - [x] Manually verify no-dot note materialization: paragraph text, table row branches, code lines, blockquotes and maths appear under their owning nodes (Obsidian test, 2026-11-12).
 - [x] Verify the interim hierarchical table representation before replacing it with a proper grid (manual Obsidian test, 2026-11-12; superseded).
 - [x] Implement a grid-shaped SVG table atom with distinct header cells, cell borders, wrapped text, and preserved Markdown column alignment (GitHub CI, 2026-11-12; manual Obsidian verification pending).
-- [ ] Manually verify table headers, cell boundaries, left/center/right alignment and wrapped values in the Maploom graph.
+- [x] Manually verify table grid rendering in the Maploom graph (headers, cell grid and row/column preservation; user confirmed, 2026-11-12).
 - [x] Verify a relative Markdown image appears as an actual image preview in the graph (Obsidian test, 2026-11-12).
 - [ ] Verify Obsidian `![[image]]` embeds appear as actual image previews in the graph; Source note modal rendering is already verified.
 - [x] Verify Show notes / Hide notes toggling; both states work without restoring grey dots (manual Obsidian test, 2026-11-12).
@@ -30,7 +30,7 @@
 
 ## Phase 2 — Obsidian integration and note access
 - [x] Adopt a no-grey-dot interaction model: omit Markmap note markers and popovers.
-- [x] Implement attached note blocks as ordinary child branches, with a Show notes / Hide notes toolbar control; manual Obsidian verification pending.
+- [x] Implement and manually verify attached note blocks as ordinary child branches, with a working Show notes / Hide notes toolbar control (user confirmed, 2026-11-12).
 - [x] Make the map canvas use the full available workspace by default.
 - [x] Add an on-demand Source note modal using Obsidian's MarkdownRenderer; opening it does not resize the map canvas.
 - [x] Verify standard wikilinks, aliased wikilinks and heading links render as Obsidian links in the Source note modal (manual test, 2026-11-11; click navigation still to be tested).
