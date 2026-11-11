@@ -16,6 +16,12 @@ The source note is not kept in a permanent side-by-side panel. Opening or closin
 
 Markmap's grey-dot note markers and click-to-open note popovers are deliberately disabled. Attached paragraphs, code blocks, blockquotes and lists are materialized into ordinary child branches beneath their owning node. Markdown tables are represented by a custom inline atom that draws a true grid-shaped SVG table inside one map node, preserving header cells, column boundaries, wrapped text and left/center/right alignment. A Show notes / Hide notes control toggles these materialized notes; notes are shown by default. The Source note modal remains available for full Obsidian formatting and semantic HTML tables.
 
+## Map-to-source navigation
+
+Each Markdown AST node receives a temporary `data.maploomSourcePosition` value before Markmap converts the AST to its smaller tree. Markmap heading/list nodes retain their own `position`; materialized note nodes copy the preserved offset into their synthetic node. This avoids guessing by heading text and handles duplicate titles.
+
+On map clicks, Maploom uses Markmap's `hitAt` API to distinguish ordinary nodes from fold toggles and links. For a source-linked node, it decorates a rendering-only copy of the Markdown with an invisible anchor at the recorded source offset. The Source note modal renders that copy, scrolls to the marker's containing block and briefly highlights it. The original vault file is neither rewritten nor saved. Wikilink clicks continue to navigate to the wikilink target; fold controls continue to fold/unfold instead of opening the source modal.
+
 ## Initial pipeline
 
 1. Obsidian identifies the active Markdown file.
