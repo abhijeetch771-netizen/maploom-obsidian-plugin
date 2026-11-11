@@ -1,76 +1,25 @@
-import { App, ItemView, MarkdownView, Notice, TFile, WorkspaceLeaf } from 'obsidian';
+import {
+  ItemView,
+  MarkdownRenderer,
+  MarkdownView,
+  Notice,
+  TFile,
+  WorkspaceLeaf,
+} from 'obsidian';
 import { parse } from '@markmap/parse';
 import { mathContent, remarkMath } from '@markmap/plugin-math';
-import { defaultContentPlugins } from '@markmap/render';
-import { Markmap, resolveViewOptions, type ViewOptions } from '@markmap/view';
+import { basicContent, imageContent } from '@markmap/render';
+import { Markmap, resolveViewOptions } from '@markmap/view';
 
 export const VIEW_TYPE_MAPLOOM = 'maploom-view';
-
-/**
- * Resolve local Markdown images in a note popover.
- *
- * Markmap sanitizes Markdown-derived HTML before calling ContentPlugin.popover hooks.
- * Resolving to Obsidian's app:// resource URL during parsing is therefore too early:
- * the sanitizer removes that non-web protocol. This hook runs after sanitization and
- * only rewrites an image when Obsidian can resolve it to a file in this vault.
- */
-function createObsidianImagePopoverPlugin(
-  app: App,
-  sourcePath: string,
-): NonNullable<ViewOptions['plugins']>[number] {
-  return {
-    name: 'obsidian-vault-images',
-    popover(tree) {
-      const visit = (node: unknown): void => {
-        if (!node || typeof node !== 'object') return;
-
-        const item = node as {
-          type?: unknown;
-          tagName?: unknown;
-          properties?: Record<string, unknown>;
-          children?: unknown;
-        };
-
-        if (item.type === 'element' && item.tagName === 'img') {
-          const src = item.properties?.src;
-          if (typeof src === 'string' && src.trim()) {
-            const value = src.trim();
-            const isExternal =
-              /^(https?:|data:|blob:|file:|app:|obsidian:)/i.test(value) ||
-              value.startsWith('//');
-
-            if (!isExternal) {
-              let linkPath = value;
-              try {
-                linkPath = decodeURIComponent(value);
-              } catch {
-                // Keep the original link when URI decoding fails.
-              }
-
-              const file = app.metadataCache.getFirstLinkpathDest(linkPath, sourcePath);
-              if (file) item.properties!.src = app.vault.getResourcePath(file);
-              else {
-                console.warn('Maploom: local image could not be resolved', {
-                  sourcePath,
-                  linkPath,
-                });
-              }
-            }
-          }
-        }
-
-        if (Array.isArray(item.children)) item.children.forEach(visit);
-      };
-
-      visit(tree);
-    },
-  };
-}
 
 export class MaploomView extends ItemView {
   private svg: SVGSVGElement | null = null;
   private map: Markmap | null = null;
   private sourcePath: string | null = null;
+  private sourceContent: HTMLElement | null = null;
+  private sourcePanel: HTMLElement | null = null;
+  private showSource = true;
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
@@ -97,9 +46,24 @@ export class MaploomView extends ItemView {
     toolbar.createEl('button', { text: 'Expand all' }).addEventListener('click', () => this.map?.expandAll());
     toolbar.createEl('button', { text: 'Fold all' }).addEventListener('click', () => this.map?.foldAll());
 
-    this.svg = this.contentEl.createSvg('svg', { cls: 'maploom-canvas' });
+    const sourceToggle = toolbar.createEl('button', { text: 'Hide source note' });
+    sourceToggle.setAttribute('aria-pressed', 'true');
+    sourceToggle.addEventListener('click', () => {
+      this.showSource = !this.showSource;
+      this.sourcePanel?.toggleClass('is-hidden', !this.showSource);
+      sourceToggle.setText(this.showSource ? 'Hide source note' : 'Show source note');
+      sourceToggle.setAttribute('aria-pressed', String(this.showSource));
+    });
+
+    const workspace = this.contentEl.createDiv({ cls: 'maploom-workspace' });
+    const mapPanel = workspace.createDiv({ cls: 'maploom-map-panel' });
+    this.svg = mapPanel.createSvg('svg', { cls: 'maploom-canvas' });
     this.svg.setAttribute('width', '100%');
     this.svg.setAttribute('height', '100%');
+
+    this.sourcePanel = workspace.createDiv({ cls: 'maploom-source-panel' });
+    this.sourcePanel.createEl('div', { cls: 'maploom-source-heading', text: 'Source note' });
+    this.sourceContent = this.sourcePanel.createDiv({ cls: 'maploom-source-content markdown-rendered' });
 
     await this.refreshFromActiveFile();
   }
@@ -108,6 +72,8 @@ export class MaploomView extends ItemView {
     this.map?.destroy();
     this.map = null;
     this.svg = null;
+    this.sourceContent = null;
+    this.sourcePanel = null;
   }
 
   async setSourceFile(file: TFile): Promise<void> {
@@ -126,11 +92,32 @@ export class MaploomView extends ItemView {
     await this.renderMarkdown(await this.app.vault.cachedRead(file));
   }
 
+  private async renderSourceNote(markdown: string): Promise<void> {
+    if (!this.sourceContent || !this.sourcePath) return;
+    this.sourceContent.empty();
+
+    try {
+      // Obsidian's renderer resolves wikilinks, embeds, attachments, callouts,
+      // and vault-specific Markdown using the source note's actual path.
+      await MarkdownRenderer.render(
+        this.app,
+        markdown,
+        this.sourceContent,
+        this.sourcePath,
+        this,
+      );
+    } catch (error) {
+      console.error('Maploom source-note rendering failed', error);
+      this.sourceContent.createEl('p', {
+        text: 'Maploom could not render the source note. See the developer console.',
+      });
+    }
+  }
+
   private async renderMarkdown(markdown: string): Promise<void> {
     if (!this.svg) return;
 
     try {
-      const sourcePath = this.sourcePath;
       const { root, frontmatter } = parse(markdown, { plugins: [remarkMath] });
       const { options, warnings } = resolveViewOptions(
         { colorScheme: 'auto' },
@@ -141,18 +128,18 @@ export class MaploomView extends ItemView {
         console.warn('Maploom: ignored unsupported Markmap frontmatter options', warnings);
       }
 
+      // Deliberately omit Markmap's noteContent plugin: Maploom does not use
+      // grey-dot popovers. All original note content is continuously visible
+      // in the adjacent Obsidian-rendered source panel instead.
       const viewOptions = {
         ...options,
-        plugins: [
-          ...defaultContentPlugins,
-          mathContent,
-          ...(sourcePath ? [createObsidianImagePopoverPlugin(this.app, sourcePath)] : []),
-        ],
+        plugins: [basicContent, imageContent, mathContent],
       };
 
       if (this.map) this.map.setTree(root, viewOptions);
       else this.map = Markmap.create(this.svg, root, viewOptions);
 
+      await this.renderSourceNote(markdown);
       window.requestAnimationFrame(() => this.map?.fit());
     } catch (error) {
       console.error('Maploom rendering failed', error);
