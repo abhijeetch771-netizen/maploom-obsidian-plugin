@@ -16,6 +16,7 @@
     "tslib": "^2.8.1"
   },
   "dependencies": {
+    "@markmap/core": "latest",
     "@markmap/parse": "latest",
     "@markmap/view": "latest",
     "@markmap/plugin-math": "latest",
