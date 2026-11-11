@@ -11,7 +11,7 @@
 - [x] Verify heading hierarchy, nested lists, task-list markers, blockquotes and code blocks in Obsidian (manual test, 2026-11-11).
 - [ ] Verify paragraph ownership and rendering across larger notes.
 - [x] Verify a basic GFM table renders as a formatted table in a node-note popover (manual Obsidian test, 2026-11-11).
-- [ ] Verify inline formatting, links, images and task lists.
+- [ ] Verify inline formatting, links, local images and task-list popovers using the expanded regression fixture.
 - [x] Verify `@markmap/plugin-math` renders an inline LaTeX equation in an Obsidian node-note popover (manual test, 2026-11-11).
 - [ ] Build regression fixtures.
 - [ ] Resolve Obsidian wikilinks, embeds and asset paths safely.
