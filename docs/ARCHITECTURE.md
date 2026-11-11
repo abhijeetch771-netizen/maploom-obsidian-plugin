@@ -12,7 +12,7 @@ The Maploom workspace has one primary region:
 
 A **Source note** toolbar command opens the complete original note in a native Obsidian modal, on demand. The modal uses Obsidian's `MarkdownRenderer.render` with the note's actual source path, so wikilinks, aliases, embeds, attachments, callouts, tables and other Obsidian-specific Markdown use Obsidian's own rendering pipeline.
 
-The source note is not kept in a permanent side-by-side panel. Opening or closing its modal does not resize the map canvas. The user can close the modal and return to the full-size map.
+The source note is not kept in a permanent side-by-side panel. Opening or closing its modal does not resize the map canvas. The user can close the modal and return to the full-size map. Since `MarkdownRenderer.render` does not attach Reading View's delegated internal-link click handlers in a standalone modal, Maploom registers a lifecycle-managed click handler on the modal content and routes internal links through `Workspace.openLinkText(linkText, sourcePath, Keymap.isModEvent(event))`.
 
 Markmap's grey-dot note markers and click-to-open note popovers are deliberately disabled. Essential note content is never hidden behind per-node markers.
 
