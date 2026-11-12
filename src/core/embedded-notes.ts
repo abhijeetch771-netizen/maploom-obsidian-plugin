@@ -116,7 +116,7 @@ export async function expandEmbeddedNotes(
       try {
         const markdown = await options.app.vault.cachedRead(file);
         const embeddedRoot = options.parseMarkdown(markdown, file.path);
-        materializeNoteBlocks(embeddedRoot);
+        materializeNoteBlocks(embeddedRoot, markdown);
 
         expandedCount += 1;
         visited.add(canonicalPath);
