@@ -97,6 +97,85 @@ function tableToNode(block: NoteBlock, id: string): NoteTreeNode {
 }
 
 
+
+interface CalloutInlineNode {
+  type?: string;
+  value?: string;
+  url?: string;
+  alt?: string;
+  children?: CalloutInlineNode[];
+}
+
+interface CalloutTextRun {
+  text: string;
+  strong?: boolean;
+  emphasis?: boolean;
+  strike?: boolean;
+  code?: boolean;
+  href?: string;
+}
+
+function titleCase(value: string): string {
+  return value.replace(/[-_]+/g, ' ').replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
+}
+
+/** Flatten phrasing AST into SVG-ready runs while retaining inline emphasis. */
+function toCalloutRuns(nodes: CalloutInlineNode[]): CalloutTextRun[] {
+  const runs: CalloutTextRun[] = [];
+
+  const append = (
+    text: string,
+    style: Omit<CalloutTextRun, 'text'>,
+  ): void => {
+    if (!text) return;
+    const last = runs[runs.length - 1];
+    if (last && last.strong === style.strong && last.emphasis === style.emphasis
+      && last.strike === style.strike && last.code === style.code && last.href === style.href) {
+      last.text += text;
+    } else {
+      runs.push({ text, ...style });
+    }
+  };
+
+  const visit = (
+    node: CalloutInlineNode,
+    inherited: Omit<CalloutTextRun, 'text'> = {},
+  ): void => {
+    switch (node.type) {
+      case 'text':
+        append(node.value ?? '', inherited);
+        return;
+      case 'inlineCode':
+        append(node.value ?? '', { ...inherited, code: true });
+        return;
+      case 'break':
+        append('\n', inherited);
+        return;
+      case 'strong':
+        node.children?.forEach((child) => visit(child, { ...inherited, strong: true }));
+        return;
+      case 'emphasis':
+        node.children?.forEach((child) => visit(child, { ...inherited, emphasis: true }));
+        return;
+      case 'delete':
+        node.children?.forEach((child) => visit(child, { ...inherited, strike: true }));
+        return;
+      case 'link':
+      case 'linkReference':
+        node.children?.forEach((child) => visit(child, { ...inherited, href: node.url }));
+        return;
+      case 'image':
+        append(node.alt ? '[' + node.alt + ']' : '[image]', inherited);
+        return;
+      default:
+        node.children?.forEach((child) => visit(child, inherited));
+    }
+  };
+
+  nodes.forEach((node) => visit(node));
+  return runs;
+}
+
 interface CalloutDefinition {
   type: string;
   fold?: '+' | '-';
@@ -226,23 +305,30 @@ function blockquoteToNode(
   if (definition.fold) callout.data.maploomCalloutFold = definition.fold;
 
   const blocks = [...(block.children ?? [])];
-  const first = blocks[0];
-  if (first?.type === 'paragraph') {
-    const body = stripCalloutMarker(inlineContent(first), definition.markerText);
-    if (body.length > 0) {
-      callout.children.push(withSourcePosition(
-        makeNode(id + '-callout-body', 'noteParagraph', body, [], 'calloutBody'),
-        first,
-      ));
-    }
-    blocks.shift();
-  }
+  const paragraphs: Array<{ runs: CalloutTextRun[] }> = [];
 
   blocks.forEach((child, childIndex) => {
+    if (child.type === 'paragraph') {
+      const inline = childIndex === 0
+        ? stripCalloutMarker(inlineContent(child), definition.markerText)
+        : inlineContent(child);
+      const runs = toCalloutRuns(inline as CalloutInlineNode[]);
+      if (runs.length > 0) paragraphs.push({ runs });
+      return;
+    }
+
     callout.children.push(
       blockToNode(child, id + '-callout-' + (childIndex + 1), markdown),
     );
   });
+
+  callout.content = [{
+    type: 'maploomCallout',
+    calloutType: definition.type.toLowerCase(),
+    title: definition.title || titleCase(definition.type),
+    fold: definition.fold,
+    paragraphs,
+  }];
   return withSourcePosition(callout, block);
 }
 
