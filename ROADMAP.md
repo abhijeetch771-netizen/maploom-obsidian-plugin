@@ -33,7 +33,9 @@
 - [x] Verify a relative Markdown image appears as an actual image preview in the graph (Obsidian test, 2026-11-12).
 - [x] Verify Obsidian `![[image]]` embeds appear as actual image previews in the graph; ordinary Markdown image previews also remain functional (manual Obsidian test, user screenshot confirmation, 2026-11-12).
 - [x] Verify Show notes / Hide notes toggling; both states work without restoring grey dots (manual Obsidian test, 2026-11-12).
-- [ ] Verify Obsidian-specific callouts, properties/frontmatter, block references and relative attachment paths.
+- [x] Verify YAML frontmatter `title` is used as the map root label (manual Obsidian test, `Maploom-Large-Paragraph-Test.md`, user screenshot confirmation, 2026-11-12).
+- [ ] Verify Obsidian callout content in graph branches.
+- [ ] Verify additional Obsidian properties/frontmatter, block references and relative attachment paths.
 
 ## Phase 2 — Obsidian integration and note access
 - [x] Adopt a no-grey-dot interaction model: omit Markmap note markers and popovers.
