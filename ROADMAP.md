@@ -24,7 +24,7 @@
 - [x] Verify recursive whole-note embeds: `Maploom-Linked-Note` expands `Maploom-Nested-Note`, including the nested heading and paragraph; verified under both normal and aliased embed branches (manual Obsidian test, user screenshot confirmation, 2026-11-12).
 - [x] Verify relative wikilink rendering and navigation inside an embedded note: the link label renders and opens the sibling target note relative to the embedded file, not the host note (manual Obsidian test, user confirmed, 2026-11-12).
 - [x] Verify relative Obsidian image embeds inside an embedded note: `![[maploom-fixture.svg]]` resolves from the embedded note's folder and renders as an image in the graph (manual Obsidian test, user screenshot confirmation, 2026-11-12).
-- [ ] Verify cycle protection for circular whole-note embeds.
+- [x] Verify circular whole-note embed protection: repeated `Maploom-Linked-Note` is stopped with an explanatory branch and the graph remains responsive (manual Obsidian test, user screenshot confirmation, 2026-11-12).
 - [ ] Extend graph expansion to section/block embeds (`![[Note#Heading]]`, `![[Note#^block]]`) and mixed inline embeds; these are intentionally not included in the first implementation.
 - [x] Manually verify no-dot note materialization: paragraph text, table row branches, code lines, blockquotes and maths appear under their owning nodes (Obsidian test, 2026-11-12).
 - [x] Verify the interim hierarchical table representation before replacing it with a proper grid (manual Obsidian test, 2026-11-12; superseded).
