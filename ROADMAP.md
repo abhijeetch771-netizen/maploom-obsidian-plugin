@@ -16,7 +16,7 @@
 - [x] Verify a relative local SVG image renders (manual Obsidian test, 2026-11-11).
 - [x] Verify `@markmap/plugin-math` renders an inline LaTeX equation (manual Obsidian test, 2026-11-11).
 - [x] Verify task-list checked state and labels in the graph and Source note modal: checked and unchecked tasks retain the correct state and text (manual Obsidian test, user confirmed, 2026-11-12).
-- [ ] Build automated regression tests for Markdown/GFM rendering.
+- [x] Add automated regression tests for Markdown/GFM parsing and Maploom transformations: real Markdown/callout fixtures, heading/paragraph ownership, task states, table conversion, callout metadata/body runs, embedded-note recursion/cycle handling, and SVG callout/table/image output (21 Node tests; GitHub Actions build and test passed, run 158, 2026-11-12).
 - [x] Manually verify map-label wikilinks: readable labels for standard, aliased and heading links, with navigation through `Workspace.openLinkText` (user confirmed, 2026-11-11).
 - [x] Verify a standalone whole-note embed (`![[Note]]`) expands into a nested graph branch; the embedded note's heading, paragraphs, formatted table and blockquote appear in the graph (manual Obsidian test, user screenshot confirmation, 2026-11-12).
 - [x] Verify Show notes / Hide notes toggling with an embedded note: embedded content disappears when notes are hidden and returns when shown (user screenshots confirmed, 2026-11-12).
