@@ -22,7 +22,8 @@
 - [x] Verify Show notes / Hide notes toggling with an embedded note: embedded content disappears when notes are hidden and returns when shown (user screenshots confirmed, 2026-11-12).
 - [x] Verify embed aliases (`![[Note|Alias]]`) are used as the embedded graph branch label (manual Obsidian test, user screenshot confirmation, 2026-11-12).
 - [x] Verify recursive whole-note embeds: `Maploom-Linked-Note` expands `Maploom-Nested-Note`, including the nested heading and paragraph; verified under both normal and aliased embed branches (manual Obsidian test, user screenshot confirmation, 2026-11-12).
-- [ ] Verify relative wikilinks/images inside embedded notes and cycle protection.
+- [x] Verify relative wikilink rendering and navigation inside an embedded note: the link label renders and opens the sibling target note relative to the embedded file, not the host note (manual Obsidian test, user confirmed, 2026-11-12).
+- [ ] Verify relative images inside embedded notes and cycle protection.
 - [ ] Extend graph expansion to section/block embeds (`![[Note#Heading]]`, `![[Note#^block]]`) and mixed inline embeds; these are intentionally not included in the first implementation.
 - [x] Manually verify no-dot note materialization: paragraph text, table row branches, code lines, blockquotes and maths appear under their owning nodes (Obsidian test, 2026-11-12).
 - [x] Verify the interim hierarchical table representation before replacing it with a proper grid (manual Obsidian test, 2026-11-12; superseded).
