@@ -9,7 +9,7 @@
 
 ## Phase 1 — Rendering and content fidelity
 - [x] Verify heading hierarchy, nested lists, task-list markers, blockquotes and code blocks in Obsidian (manual test, 2026-11-11).
-- [ ] Verify paragraph ownership and rendering across larger notes.
+- [x] Verify paragraph ownership and rendering across a larger note: introductory paragraphs remain at root; paragraphs stay separate and in source order under their correct headings; paragraphs before/after lists remain with the owning section; no missing or duplicated paragraphs were visible (manual Obsidian test, user screenshot confirmation, 2026-11-12).
 - [x] Verify a basic GFM table renders as a formatted table (manual Obsidian test, 2026-11-11).
 - [x] Verify inline bold, italic, strikethrough and inline code (manual Obsidian test, 2026-11-11).
 - [x] Verify external Markdown hyperlinks render as clickable links (manual Obsidian test, 2026-11-11).
