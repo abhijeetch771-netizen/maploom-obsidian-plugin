@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc --noEmit -skipLibCheck && node esbuild.config.mjs production",
-    "test": "tsc --project tsconfig.tests.json && node --test .test-dist/tests"
+    "test": "tsc --project tsconfig.tests.json && esbuild tests/note-nodes.test.ts tests/embedded-notes.test.ts tests/renderers.test.ts --bundle --platform=node --format=cjs --outdir=.test-dist/tests && node --test .test-dist/tests"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
