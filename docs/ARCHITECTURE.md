@@ -90,17 +90,27 @@ Expansion has cycle detection and limits on nesting depth and total embedded not
 
 ## Export design
 
-Planned export scopes:
+### Implemented: SVG export
+
+Maploom exports the current rendered map as a standalone SVG using Markmap's `toSVGString` renderer. The export preserves the map's vector structure, text, branches, table grids, links and theme tokens. Maploom's callout stylesheet is included in the exported SVG.
+
+Local vault images are embedded as Base64 data URLs. Embedded SVG image assets are rasterized to PNG and written into both href and xlink:href attributes. This improves compatibility with Windows Photos while keeping the mind map itself in vector format.
+
+The SVG is saved beside the source note using a -map.svg filename. If that path already exists, Maploom selects a numbered filename rather than overwriting the existing export.
+
+SVG export is a static snapshot of the map, not an interactive Obsidian view. It does not preserve map folding, live updates, workspace controls or native Obsidian navigation. The current SVG export scope is map only; it does not include the complete source note.
+
+### Remaining formats
+
+- Offline HTML, preserving the map and rendered source content with styles, images and required assets bundled locally.
+- PNG export with configurable scale/background and sensible large-map handling.
+- PDF export using a dedicated print layout containing the map and full source note, including formatted tables, images, links and code. Wide tables, long code blocks and page breaks require explicit testing.
+
+### Planned export scopes
 
 - Map only.
 - Source note only.
 - Map plus source note.
-
-Planned formats:
-
-- Offline HTML, preserving the map and rendered source content.
-- SVG and PNG for static map graphics.
-- PDF using a dedicated print layout containing the map and full note content. Wide tables, long code blocks, images and page breaks require explicit testing.
 
 ## API basis
 

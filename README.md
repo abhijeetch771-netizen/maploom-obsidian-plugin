@@ -19,6 +19,7 @@ Maploom is an open-source Obsidian plugin that turns Markdown notes into interac
 - Standalone whole-note embeds (`![[Note]]`) expand into nested graph branches, including the embedded note's headings, paragraphs, formatted tables and blockquotes. Alias handling and recursive whole-note embeds have also been manually verified. Relative wikilink rendering/navigation, relative image resolution from an embedded note, and circular whole-note embed protection have all been manually verified. Section/block and mixed inline embeds are not yet supported.
 - Clicking a source-linked map node opens the Source note modal at the matching Markdown block, scrolls it into view and briefly highlights it.
 - The map occupies the full Maploom workspace.
+- Export the current map as a standalone SVG, with embedded local images and Windows Photos-compatible PNG fallbacks for nested SVG image assets.
 - A **Source note** toolbar button opens the complete original note in an on-demand Obsidian modal. The modal uses Obsidian's Markdown renderer for vault-native links, embeds, attachments, tables and other Obsidian Markdown features. Opening it does not reduce the map viewport.
 
 ## Development

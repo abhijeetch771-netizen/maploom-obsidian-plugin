@@ -12,13 +12,14 @@ import {
 } from 'obsidian';
 import { parse } from '@markmap/parse';
 import { mathContent, remarkMath } from '@markmap/plugin-math';
-import { basicContent } from '@markmap/render';
+import { basicContent, toSVGString } from '@markmap/render';
 import { Markmap, resolveViewOptions } from '@markmap/view';
 import { materializeNoteBlocks, type NoteTreeNode } from '../core/note-nodes';
 import { createVaultImageContent } from '../core/image-content';
 import { tableContent } from '../core/table-content';
 import { expandEmbeddedNotes } from '../core/embedded-notes';
 import { calloutContent } from '../core/callout-content';
+import { embedVaultImagesInSvg, getSvgExportPath, injectCalloutStyles } from '../export/svg-export';
 
 interface RemarkNode {
   type?: string;
@@ -404,6 +405,7 @@ export class MaploomView extends ItemView {
       if (this.sourceMarkdown) void this.renderMarkdown(this.sourceMarkdown);
     });
     toolbar.createEl('button', { text: 'Source note' }).addEventListener('click', () => this.openSourceNote());
+    toolbar.createEl('button', { text: 'Export SVG' }).addEventListener('click', () => void this.exportSvg());
 
     const mapPanel = this.contentEl.createDiv({ cls: 'maploom-map-panel' });
     mapPanel.setAttribute(
@@ -579,6 +581,46 @@ export class MaploomView extends ItemView {
     }
 
     new SourceNoteModal(this.app, this.sourceMarkdown, this.sourcePath).open();
+  }
+
+  private async exportSvg(): Promise<void> {
+    const result = this.map?.result;
+    const sourcePath = this.sourcePath;
+
+    if (!result || !sourcePath) {
+      new Notice('Maploom: no rendered map is available to export.');
+      return;
+    }
+
+    try {
+      const rawSvg = toSVGString(result, {
+        colorScheme: this.map!.options.colorScheme,
+        background: true,
+      });
+
+      const styledSvg = injectCalloutStyles(rawSvg);
+      const embedded = await embedVaultImagesInSvg(styledSvg, this.app);
+
+      if (embedded.unresolvedLocalImages > 0) {
+        new Notice(
+          'Maploom: SVG not exported. ' +
+          embedded.unresolvedLocalImages +
+          ' local image(s) could not be embedded.',
+        );
+        return;
+      }
+
+      const outputPath = getSvgExportPath(
+        sourcePath,
+        (path) => this.app.vault.getAbstractFileByPath(path) !== null,
+      );
+
+      const file = await this.app.vault.create(outputPath, embedded.svg);
+      new Notice('Maploom: SVG exported to ' + file.path);
+    } catch (error) {
+      console.error('Maploom: SVG export failed', error);
+      new Notice('Maploom could not export the SVG. See the developer console.');
+    }
   }
 
   private openSourceNoteAt(location: SourceLocation): void {

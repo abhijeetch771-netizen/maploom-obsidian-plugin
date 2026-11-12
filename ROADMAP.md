@@ -58,7 +58,7 @@
 ## Phase 3 — Export
 - [ ] Add an Export control with explicit format choices.
 - [ ] Offline HTML export with map, source-note content, styles, images and required assets bundled locally.
-- [ ] SVG export for the map, with a clear explanation of what static SVG can and cannot preserve.
+- [x] SVG export for the map: standalone vector SVG, formatted table grids, callout styling, embedded local vault images, PNG fallbacks for nested SVG images in Windows Photos, collision-safe filenames; 26 automated tests and manual browser/Windows Photos verification passed (2026-11-12).
 - [ ] PNG export with configurable scale/background and sensible large-map handling.
 - [ ] PDF export with print layout that includes the map **and the full source-note content**, including formatted tables, images, links and code; do not rely on grey dots, popovers or interactive controls.
 - [ ] Export scope options: map only, source note only, or map plus source note.
