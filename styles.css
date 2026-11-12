@@ -17,3 +17,23 @@
 .maploom-source-anchor{display:inline-block;width:0;height:0;overflow:hidden;vertical-align:baseline}
 .maploom-source-highlight{position:relative;outline:2px solid var(--interactive-accent);outline-offset:4px;border-radius:4px;background-color:var(--text-highlight-bg);animation:maploom-source-flash 2.4s ease-out}
 @keyframes maploom-source-flash{0%,35%{background-color:var(--text-highlight-bg);outline-color:var(--interactive-accent)}100%{background-color:transparent;outline-color:transparent}}
+
+
+/* Obsidian callout cards rendered as static SVG content inside the map. */
+.maploom-callout--note{--maploom-callout-rgb:8,109,221}
+.maploom-callout--abstract{--maploom-callout-rgb:160,120,210}
+.maploom-callout--info{--maploom-callout-rgb:0,150,190}
+.maploom-callout--tip{--maploom-callout-rgb:0,190,180}
+.maploom-callout--success{--maploom-callout-rgb:30,160,100}
+.maploom-callout--question{--maploom-callout-rgb:160,115,230}
+.maploom-callout--warning{--maploom-callout-rgb:230,145,45}
+.maploom-callout--danger{--maploom-callout-rgb:225,75,75}
+.maploom-callout--example{--maploom-callout-rgb:165,120,255}
+.maploom-callout--quote{--maploom-callout-rgb:140,145,155}
+.maploom-callout__surface{fill:rgba(var(--maploom-callout-rgb),.13);stroke:rgba(var(--maploom-callout-rgb),.28);stroke-width:1}
+.maploom-callout__accent{fill:rgb(var(--maploom-callout-rgb))}
+.maploom-callout__icon{color:rgb(var(--maploom-callout-rgb))}
+.maploom-callout__icon path{fill:none;stroke:rgb(var(--maploom-callout-rgb));stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.maploom-callout__icon circle{fill:rgb(var(--maploom-callout-rgb));stroke:none}
+.maploom-callout__title{fill:rgb(var(--maploom-callout-rgb));font-weight:650}
+.maploom-callout__body{fill:var(--text-normal,#dedede)}
