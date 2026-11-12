@@ -195,7 +195,7 @@ function getCalloutDefinition(block: NoteBlock, markdown?: string): CalloutDefin
   const lineEndIndex = markdown.indexOf('\n', lineStart);
   const lineEnd = lineEndIndex < 0 ? markdown.length : lineEndIndex;
   const sourceLine = markdown.slice(lineStart, lineEnd);
-  const calloutLine = sourceLine.replace(/^\s*(?:>\s*)+/, '').trimStart();
+  const calloutLine = sourceLine.replace(/^\s*(?:>\s*)+/, '').trim();
   const match = calloutLine.match(/^\[!([A-Za-z0-9_-]+)\]([+-])?(?:[ \t]+(.*))?$/);
   if (!match) return null;
 
