@@ -20,6 +20,14 @@ import { tableContent } from '../core/table-content';
 import { expandEmbeddedNotes } from '../core/embedded-notes';
 import { calloutContent } from '../core/callout-content';
 import { embedVaultImagesInSvg, getSvgExportPath, injectCalloutStyles } from '../export/svg-export';
+import {
+  applyWhitePngTheme,
+  getPngExportPath,
+  rasterizeSvgToPng,
+  type PngBackground,
+  type PngExportOptions,
+  type PngScale,
+} from '../export/png-export';
 import htmlClientScript from 'virtual:maploom-html-client';
 import { STANDALONE_HTML_STYLES } from '../export/html-styles';
 import {
@@ -354,6 +362,114 @@ class SourceNoteModal extends Modal {
   }
 }
 
+class PngExportModal extends Modal {
+  private scale: PngScale = 2;
+  private background: PngBackground = 'theme';
+
+  constructor(
+    app: App,
+    private readonly onExport: (options: PngExportOptions) => Promise<void>,
+  ) {
+    super(app);
+  }
+
+  onOpen(): void {
+    this.setTitle('Export PNG');
+
+    this.contentEl.createEl('p', {
+      text: 'Choose the image resolution and background before exporting the complete map.',
+    });
+
+    this.addSelectSetting(
+      'Resolution',
+      'Higher resolutions produce sharper images but can require substantially more temporary memory.',
+      [
+        { value: '1', label: '1× — Standard' },
+        { value: '2', label: '2× — High (recommended)' },
+        { value: '3', label: '3× — Very high' },
+        { value: '4', label: '4× — Maximum' },
+      ],
+      '2',
+      (value) => {
+        this.scale = Number(value) as PngScale;
+      },
+    );
+
+    this.addSelectSetting(
+      'Background',
+      'Choose a transparent background, white background or the current map theme.',
+      [
+        { value: 'theme', label: 'Current map theme' },
+        { value: 'white', label: 'White' },
+        { value: 'transparent', label: 'Transparent' },
+      ],
+      'theme',
+      (value) => {
+        this.background = value as PngBackground;
+      },
+    );
+
+    const buttons = this.contentEl.createDiv({
+      cls: 'modal-button-container',
+    });
+
+    buttons.createEl('button', {
+      text: 'Cancel',
+    }).addEventListener('click', () => this.close());
+
+    buttons.createEl('button', {
+      text: 'Export PNG',
+      cls: 'mod-cta',
+    }).addEventListener('click', () => {
+      const options: PngExportOptions = {
+        scale: this.scale,
+        background: this.background,
+      };
+
+      this.close();
+      void this.onExport(options);
+    });
+  }
+
+  onClose(): void {
+    this.contentEl.empty();
+  }
+
+  private addSelectSetting(
+    name: string,
+    description: string,
+    options: Array<{ value: string; label: string }>,
+    defaultValue: string,
+    onChange: (value: string) => void,
+  ): void {
+    const row = this.contentEl.createDiv({ cls: 'setting-item' });
+    const info = row.createDiv({ cls: 'setting-item-info' });
+
+    info.createDiv({
+      cls: 'setting-item-name',
+      text: name,
+    });
+
+    info.createDiv({
+      cls: 'setting-item-description',
+      text: description,
+    });
+
+    const control = row.createDiv({ cls: 'setting-item-control' });
+    const select = control.createEl('select', { cls: 'dropdown' });
+
+    for (const option of options) {
+      const element = select.createEl('option', {
+        text: option.label,
+      });
+      element.value = option.value;
+    }
+
+    select.value = defaultValue;
+    select.addEventListener('change', () => onChange(select.value));
+  }
+}
+
 function isBlockRenderedEmbed(node: Node): node is HTMLElement {
   if (!(node instanceof HTMLElement) || !node.matches('span.internal-embed')) {
     return false;
@@ -558,6 +674,7 @@ export class MaploomView extends ItemView {
     });
     toolbar.createEl('button', { text: 'Source note' }).addEventListener('click', () => this.openSourceNote());
     toolbar.createEl('button', { text: 'Export SVG' }).addEventListener('click', () => void this.exportSvg());
+    toolbar.createEl('button', { text: 'Export PNG' }).addEventListener('click', () => this.openPngExport());
     toolbar.createEl('button', { text: 'Export HTML' }).addEventListener('click', () => void this.exportHtml());
 
     const mapPanel = this.contentEl.createDiv({ cls: 'maploom-map-panel' });
@@ -777,6 +894,69 @@ export class MaploomView extends ItemView {
     } catch (error) {
       console.error('Maploom: SVG export failed', error);
       new Notice('Maploom could not export the SVG. See the developer console.');
+    }
+  }
+
+  private openPngExport(): void {
+    new PngExportModal(
+      this.app,
+      (options) => this.exportPng(options),
+    ).open();
+  }
+
+  private async exportPng(options: PngExportOptions): Promise<void> {
+    const map = this.map;
+    const sourcePath = this.sourcePath;
+
+    if (!map?.result || !sourcePath) {
+      new Notice('Maploom: no rendered map is available to export.');
+      return;
+    }
+
+    try {
+      const rawSvg = toSVGString(map.result, {
+        colorScheme: options.background === 'white'
+          ? 'light'
+          : map.options.colorScheme,
+        background: options.background === 'theme',
+      });
+
+      const colorAdjustedSvg = options.background === 'white'
+        ? applyWhitePngTheme(rawSvg)
+        : rawSvg;
+
+      const styledSvg = injectCalloutStyles(colorAdjustedSvg);
+      const embedded = await embedVaultImagesInSvg(styledSvg, this.app);
+
+      if (embedded.unresolvedLocalImages > 0) {
+        new Notice(
+          'Maploom: PNG not exported. ' +
+          embedded.unresolvedLocalImages +
+          ' local image(s) could not be embedded.',
+        );
+        return;
+      }
+
+      const pngBlob = await rasterizeSvgToPng(embedded.svg, options);
+      const outputPath = getPngExportPath(
+        sourcePath,
+        (path) => this.app.vault.getAbstractFileByPath(path) !== null,
+      );
+
+      const file = await this.app.vault.createBinary(
+        outputPath,
+        await pngBlob.arrayBuffer(),
+      );
+
+      new Notice('Maploom: PNG exported to ' + file.path);
+    } catch (error) {
+      console.error('Maploom: PNG export failed', error);
+
+      const detail = error instanceof Error
+        ? error.message
+        : String(error);
+
+      new Notice('Maploom could not export the PNG: ' + detail);
     }
   }
 
