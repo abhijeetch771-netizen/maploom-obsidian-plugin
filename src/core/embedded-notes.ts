@@ -1,4 +1,4 @@
-import { TFile, type App } from 'obsidian';
+import type { App, TFile } from 'obsidian';
 import type { NoteTreeNode } from './note-nodes';
 import { materializeNoteBlocks } from './note-nodes';
 
@@ -42,6 +42,16 @@ function getEmbedReference(node: NoteTreeNode): EmbedReference | null {
   const alias = parts.slice(1).join('|').trim();
   if (!linkpath) return null;
   return { linkpath, alias: alias || undefined };
+}
+
+
+function isMarkdownFile(file: unknown): file is TFile {
+  if (!file || typeof file !== 'object') return false;
+  const candidate = file as { path?: unknown; extension?: unknown; basename?: unknown };
+  return typeof candidate.path === 'string'
+    && typeof candidate.basename === 'string'
+    && typeof candidate.extension === 'string'
+    && candidate.extension.toLowerCase() === 'md';
 }
 
 function setEmbedMessage(node: NoteTreeNode, message: string): void {
@@ -98,7 +108,7 @@ export async function expandEmbeddedNotes(
         currentPath,
       );
 
-      if (!(file instanceof TFile) || file.extension.toLowerCase() !== 'md') {
+      if (!isMarkdownFile(file)) {
         setEmbedMessage(node, 'Unresolved note embed: ' + reference.linkpath);
         return;
       }
