@@ -542,7 +542,7 @@ export class MaploomView extends ItemView {
       // Materialize attached block notes as visible child branches. This keeps
       // their content in the map and in future static exports without markers.
       if (this.showNoteContent) {
-        materializeNoteBlocks(treeRoot);
+        materializeNoteBlocks(treeRoot, markdown);
 
         if (this.sourcePath) {
           await expandEmbeddedNotes(treeRoot, {
