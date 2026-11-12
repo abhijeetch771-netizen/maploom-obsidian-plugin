@@ -15,7 +15,7 @@ Maploom is an open-source Obsidian plugin that turns Markdown notes into interac
 - No grey-dot note markers or click-to-open note popovers.
 - Attached paragraphs, code blocks and blockquotes are materialized as visible child branches; Markdown tables are rendered as grid-shaped SVG table blocks with headers, cell borders and column alignment. A Show notes / Hide notes control lets readers reduce map density.
 - Obsidian wikilinks in map labels are converted to readable link labels and routed through Obsidian navigation, including relative links from embedded notes.
-- Obsidian callouts are converted into typed graph nodes that retain the callout type, optional title and collapsed/expanded marker; body blocks remain visible beneath the callout node. Manual verification is pending.
+- Obsidian callouts are converted into typed graph nodes that retain the callout type, optional title and collapsed/expanded marker; body blocks remain visible beneath the callout node. The implementation and fixture pass GitHub Actions CI; manual Obsidian verification is pending.
 - Standalone whole-note embeds (`![[Note]]`) expand into nested graph branches, including the embedded note's headings, paragraphs, formatted tables and blockquotes. Alias handling and recursive whole-note embeds have also been manually verified. Relative wikilink rendering/navigation, relative image resolution from an embedded note, and circular whole-note embed protection have all been manually verified. Section/block and mixed inline embeds are not yet supported.
 - Clicking a source-linked map node opens the Source note modal at the matching Markdown block, scrolls it into view and briefly highlights it.
 - The map occupies the full Maploom workspace.
