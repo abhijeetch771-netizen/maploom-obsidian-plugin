@@ -87,7 +87,7 @@ test('callout SVG renderer preserves emphasis, line breaks and safe links', () =
   assert.match(svg, /font-style="italic"/);
   assert.match(svg, /font-family="monospace"/);
   assert.match(svg, /text-decoration="line-through"/);
-  assert.match(svg, /<a href="https://example\.com">/);
+  assert.match(svg, /<a href="https:\/\/example\.com">/);
   assert.match(svg, /Second paragraph\./);
 
   const untrusted = {
