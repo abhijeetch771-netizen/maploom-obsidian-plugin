@@ -22,6 +22,14 @@ Each Markdown AST node receives a temporary `data.maploomSourcePosition` value b
 
 On map clicks, Maploom uses Markmap's `hitAt` API to distinguish ordinary nodes from fold toggles and links. For a source-linked node, it decorates a rendering-only copy of the Markdown with an invisible anchor at the recorded source offset. The Source note modal renders that copy, scrolls to the marker's containing block and briefly highlights it. The original vault file is neither rewritten nor saved. Wikilink clicks continue to navigate to the wikilink target; fold controls continue to fold/unfold instead of opening the source modal.
 
+## Automated regression testing
+
+The repository uses Node's built-in test runner. `npm test` first type-checks test sources with `tsconfig.tests.json`, bundles the TypeScript test entry points for Node using the existing esbuild dependency, and executes the bundles with `node --test`. The tests do not require an Obsidian runtime: core embedded-note expansion uses a structural fake Vault/MetadataCache in tests, while renderer atoms are exercised with a deterministic text measurer.
+
+Coverage currently includes real `@markmap/parse` integration for the GFM and Obsidian callout fixtures; source-order and heading ownership in materialized note trees; task checked/unchecked state; table shape and alignment; callout type/title/fold parsing, body paragraph separation and inline formatting; whole-note embed aliases, nested expansion, relative resolution context, unresolved targets, unsupported section/block embeds and circular-reference protection; plus SVG callout/table/image rendering, escaping and link/image scheme checks.
+
+The CI workflow runs `npm install`, `npm run build` and `npm test` on Node.js 26. The suite is a regression layer, not a replacement for manual Obsidian integration checks (workspace navigation, modal rendering, resource URLs and visual layout).
+
 ## Obsidian callouts
 
 When a blockquote note block begins with an Obsidian callout declaration, Maploom reads the declaration from the original Markdown source line using the preserved source offset. The marker is separated from the parsed inline AST, and the resulting graph node carries the normalized callout type, optional custom title and fold marker in its data. Its label presents the type/title (and whether Obsidian marks it collapsed or expanded); body paragraphs and nested blocks remain child nodes, with their existing inline formatting preserved.
