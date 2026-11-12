@@ -96,6 +96,156 @@ function tableToNode(block: NoteBlock, id: string): NoteTreeNode {
   ), block);
 }
 
+
+interface CalloutDefinition {
+  type: string;
+  fold?: '+' | '-';
+  title?: string;
+  markerText: string;
+}
+
+/** Read the Obsidian callout declaration from its original first source line. */
+function getCalloutDefinition(block: NoteBlock, markdown?: string): CalloutDefinition | null {
+  if (!markdown) return null;
+  const position = block.data?.maploomSourcePosition as
+    | { start?: unknown }
+    | undefined;
+  if (typeof position?.start !== 'number') return null;
+
+  const lineStart = markdown.lastIndexOf('\n', Math.max(0, position.start - 1)) + 1;
+  const lineEndIndex = markdown.indexOf('\n', lineStart);
+  const lineEnd = lineEndIndex < 0 ? markdown.length : lineEndIndex;
+  const sourceLine = markdown.slice(lineStart, lineEnd);
+  const calloutLine = sourceLine.replace(/^\s*(?:>\s*)+/, '').trimStart();
+  const match = calloutLine.match(/^\[!([A-Za-z0-9_-]+)\]([+-])?(?:[ \t]+(.*))?$/);
+  if (!match) return null;
+
+  const type = match[1].toUpperCase();
+  const fold = match[2] as '+' | '-' | undefined;
+  const title = match[3]?.trim() || undefined;
+  const markerText = '[!' + match[1] + ']' + (fold ?? '') + (title ? ' ' + title : '');
+  return { type, fold, title, markerText };
+}
+
+/** Remove the callout declaration while retaining the original inline AST. */
+function stripCalloutMarker(nodes: unknown[], markerText: string): unknown[] {
+  let remaining = markerText;
+  let consumed = false;
+  const result: unknown[] = [];
+
+  for (const item of nodes) {
+    if (!remaining) {
+      result.push(item);
+      continue;
+    }
+
+    if (!item || typeof item !== 'object') {
+      if (consumed) result.push(item);
+      continue;
+    }
+
+    const node = item as { type?: string; value?: unknown };
+    if (node.type !== 'text' || typeof node.value !== 'string') {
+      if (consumed) result.push(item);
+      else return nodes;
+      continue;
+    }
+
+    const value = node.value;
+    if (remaining.startsWith(value)) {
+      remaining = remaining.slice(value.length);
+      consumed = true;
+      continue;
+    }
+
+    if (value.startsWith(remaining)) {
+      const body = value.slice(remaining.length).replace(/^\s+/, '');
+      if (body) result.push({ ...node, value: body });
+      remaining = '';
+      consumed = true;
+      continue;
+    }
+
+    if (consumed) result.push(item);
+    else return nodes;
+  }
+
+  if (!consumed || remaining) return nodes;
+
+  // Whitespace can be a separate text node after the marker.
+  for (let index = 0; index < result.length; index += 1) {
+    const item = result[index];
+    if (item && typeof item === 'object') {
+      const node = item as { type?: string; value?: unknown };
+      if (node.type === 'text' && typeof node.value === 'string') {
+        const value = node.value.replace(/^\s+/, '');
+        if (!value) result.splice(index, 1);
+        else result[index] = { ...node, value };
+        break;
+      }
+    }
+  }
+  return result;
+}
+
+function blockquoteToNode(
+  block: NoteBlock,
+  id: string,
+  markdown?: string,
+): NoteTreeNode {
+  const definition = getCalloutDefinition(block, markdown);
+  if (!definition) {
+    const quote = makeNode(
+      id,
+      'noteBlockquote',
+      [textNode('Blockquote')],
+      [],
+      'blockquote',
+    );
+    quote.children = (block.children ?? []).map((child, childIndex) =>
+      blockToNode(child, id + '-quote-' + (childIndex + 1), markdown),
+    );
+    return withSourcePosition(quote, block);
+  }
+
+  const foldLabel = definition.fold === '-'
+    ? ' (collapsed)'
+    : definition.fold === '+'
+      ? ' (expanded)'
+      : '';
+  const label = definition.type + foldLabel + (definition.title ? ' — ' + definition.title : '');
+  const callout = makeNode(
+    id,
+    'noteCallout',
+    [textNode(label)],
+    [],
+    'callout',
+  );
+  callout.data.maploomCalloutType = definition.type.toLowerCase();
+  if (definition.title) callout.data.maploomCalloutTitle = definition.title;
+  if (definition.fold) callout.data.maploomCalloutFold = definition.fold;
+
+  const blocks = [...(block.children ?? [])];
+  const first = blocks[0];
+  if (first?.type === 'paragraph') {
+    const body = stripCalloutMarker(inlineContent(first), definition.markerText);
+    if (body.length > 0) {
+      callout.children.push(withSourcePosition(
+        makeNode(id + '-callout-body', 'noteParagraph', body, [], 'calloutBody'),
+        first,
+      ));
+    }
+    blocks.shift();
+  }
+
+  blocks.forEach((child, childIndex) => {
+    callout.children.push(
+      blockToNode(child, id + '-callout-' + (childIndex + 1), markdown),
+    );
+  });
+  return withSourcePosition(callout, block);
+}
+
 function withSourcePosition(node: NoteTreeNode, block: NoteBlock): NoteTreeNode {
   const position = block.data?.maploomSourcePosition as
     | { start?: unknown; end?: unknown }
@@ -106,7 +256,7 @@ function withSourcePosition(node: NoteTreeNode, block: NoteBlock): NoteTreeNode 
   return node;
 }
 
-function blockToNode(block: NoteBlock, id: string): NoteTreeNode {
+function blockToNode(block: NoteBlock, id: string, markdown?: string): NoteTreeNode {
   switch (block.type) {
     case 'paragraph':
       return withSourcePosition(
@@ -139,19 +289,8 @@ function blockToNode(block: NoteBlock, id: string): NoteTreeNode {
       return withSourcePosition(code, block);
     }
 
-    case 'blockquote': {
-      const quote = makeNode(
-        id,
-        'noteBlockquote',
-        [textNode('Blockquote')],
-        [],
-        'blockquote',
-      );
-      quote.children = (block.children ?? []).map((child, childIndex) =>
-        blockToNode(child, id + '-quote-' + (childIndex + 1)),
-      );
-      return withSourcePosition(quote, block);
-    }
+    case 'blockquote':
+      return blockquoteToNode(block, id, markdown);
 
     case 'list': {
       const list = makeNode(id, 'noteList', [textNode('List')], [], 'list');
@@ -166,7 +305,7 @@ function blockToNode(block: NoteBlock, id: string): NoteTreeNode {
           'listItem',
         ), item);
         child.children = (item.children ?? []).slice(1).map((nested, nestedIndex) =>
-          blockToNode(nested, child.id + '-nested-' + (nestedIndex + 1)),
+          blockToNode(nested, child.id + '-nested-' + (nestedIndex + 1), markdown),
         );
         return child;
       });
@@ -193,7 +332,7 @@ function blockToNode(block: NoteBlock, id: string): NoteTreeNode {
  * Recursively insert each note block as a child of the node that owns it.
  * The after index keeps note blocks in source order relative to existing children.
  */
-export function materializeNoteBlocks(root: NoteTreeNode): void {
+export function materializeNoteBlocks(root: NoteTreeNode, markdown?: string): void {
   const visit = (node: NoteTreeNode): void => {
     const existingChildren = [...node.children];
     const grouped = new Map<number, NoteEntry[]>();
@@ -211,7 +350,7 @@ export function materializeNoteBlocks(root: NoteTreeNode): void {
     for (let index = 0; index <= existingChildren.length; index += 1) {
       for (const note of grouped.get(index) ?? []) {
         nextChildren.push(
-          blockToNode(note.block, node.id + '-maploom-note-' + (noteIndex + 1)),
+          blockToNode(note.block, node.id + '-maploom-note-' + (noteIndex + 1), markdown),
         );
         noteIndex += 1;
       }
