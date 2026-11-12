@@ -15,7 +15,7 @@
 - [x] Verify external Markdown hyperlinks render as clickable links (manual Obsidian test, 2026-11-11).
 - [x] Verify a relative local SVG image renders (manual Obsidian test, 2026-11-11).
 - [x] Verify `@markmap/plugin-math` renders an inline LaTeX equation (manual Obsidian test, 2026-11-11).
-- [ ] Verify task-list checked state and content in source-note modal.
+- [x] Verify task-list checked state and labels in the graph and Source note modal: checked and unchecked tasks retain the correct state and text (manual Obsidian test, user confirmed, 2026-11-12).
 - [ ] Build automated regression tests for Markdown/GFM rendering.
 - [x] Manually verify map-label wikilinks: readable labels for standard, aliased and heading links, with navigation through `Workspace.openLinkText` (user confirmed, 2026-11-11).
 - [x] Verify a standalone whole-note embed (`![[Note]]`) expands into a nested graph branch; the embedded note's heading, paragraphs, formatted table and blockquote appear in the graph (manual Obsidian test, user screenshot confirmation, 2026-11-12).
