@@ -70,7 +70,7 @@ test('preserves checked and unchecked task-list state on existing nodes', () => 
 
 test('converts Markdown tables into a grid atom with alignment and cell text', () => {
   const root = treeNode('root');
-  const table: NoteBlock = {
+  const table = {
     type: 'table',
     children: [
       { type: 'tableRow', children: [
@@ -84,7 +84,7 @@ test('converts Markdown tables into a grid atom with alignment and cell text', (
         { type: 'tableCell', children: [textNode('Core')] },
       ] },
     ],
-    align: ['left', 'center', 'right'] as unknown as undefined,
+    align: ['left', 'center', 'right'],
   };
   root.notes = [{ block: table, after: 0 }];
 
