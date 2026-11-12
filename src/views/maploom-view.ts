@@ -355,6 +355,10 @@ export class MaploomView extends ItemView {
   private readonly vaultImageContent = createVaultImageContent();
   private readonly sourceLocations = new Map<string, SourceLocation>();
   private sourceAnchorSequence = 0;
+  private embeddedSourcePaths = new Set<string>();
+  private refreshTimer: number | null = null;
+  private sourceLoadSequence = 0;
+  private renderSequence = 0;
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
@@ -375,6 +379,17 @@ export class MaploomView extends ItemView {
   async onOpen(): Promise<void> {
     this.contentEl.empty();
     this.contentEl.addClass('maploom-view');
+
+    this.registerEvent(this.app.vault.on('modify', (file) => {
+      if (!(file instanceof TFile)) return;
+
+      if (
+        file.path === this.sourcePath ||
+        this.embeddedSourcePaths.has(file.path)
+      ) {
+        this.scheduleDependencyRefresh();
+      }
+    }));
 
     const toolbar = this.contentEl.createDiv({ cls: 'maploom-toolbar' });
     toolbar.createEl('button', { text: 'Fit' }).addEventListener('click', () => this.map?.fit());
@@ -483,6 +498,15 @@ export class MaploomView extends ItemView {
   }
 
   async onClose(): Promise<void> {
+    if (this.refreshTimer !== null) {
+      window.clearTimeout(this.refreshTimer);
+      this.refreshTimer = null;
+    }
+
+    this.sourceLoadSequence++;
+    this.renderSequence++;
+    this.embeddedSourcePaths.clear();
+
     this.map?.destroy();
     this.map = null;
     this.svg = null;
@@ -492,9 +516,7 @@ export class MaploomView extends ItemView {
   }
 
   async setSourceFile(file: TFile): Promise<void> {
-    this.sourcePath = file.path;
-    this.sourceMarkdown = await this.app.vault.cachedRead(file);
-    await this.renderMarkdown(this.sourceMarkdown);
+    await this.loadSourceFile(file);
   }
 
   async refreshFromActiveFile(): Promise<void> {
@@ -503,9 +525,51 @@ export class MaploomView extends ItemView {
 
     if (!(file instanceof TFile) || file.extension !== 'md') return;
 
+    await this.loadSourceFile(file);
+  }
+
+  private async loadSourceFile(file: TFile): Promise<void> {
+    const request = ++this.sourceLoadSequence;
     this.sourcePath = file.path;
-    this.sourceMarkdown = await this.app.vault.cachedRead(file);
-    await this.renderMarkdown(this.sourceMarkdown);
+
+    try {
+      const markdown = await this.app.vault.cachedRead(file);
+
+      if (
+        request !== this.sourceLoadSequence ||
+        this.sourcePath !== file.path
+      ) return;
+
+      this.sourceMarkdown = markdown;
+      await this.renderMarkdown(markdown, request);
+    } catch (error) {
+      if (request !== this.sourceLoadSequence) return;
+
+      console.error('Maploom: failed to read source note', file.path, error);
+      new Notice('Maploom could not read the source note.');
+    }
+  }
+
+  private scheduleDependencyRefresh(): void {
+    if (this.refreshTimer !== null) {
+      window.clearTimeout(this.refreshTimer);
+    }
+
+    this.refreshTimer = window.setTimeout(() => {
+      this.refreshTimer = null;
+      void this.reloadSourceFile();
+    }, 250);
+  }
+
+  private async reloadSourceFile(): Promise<void> {
+    const sourcePath = this.sourcePath;
+    if (!sourcePath) return;
+
+    const file = this.app.vault.getAbstractFileByPath(sourcePath);
+
+    if (!(file instanceof TFile) || file.extension !== 'md') return;
+
+    await this.loadSourceFile(file);
   }
 
   private openSourceNote(): void {
@@ -524,15 +588,22 @@ export class MaploomView extends ItemView {
     new SourceNoteModal(this.app, decorated, this.sourcePath, anchorId, location.type).open();
   }
 
-  private async renderMarkdown(markdown: string): Promise<void> {
+  private async renderMarkdown(
+    markdown: string,
+    loadRequest = this.sourceLoadSequence,
+  ): Promise<void> {
+    const renderRequest = ++this.renderSequence;
+    const sourcePath = this.sourcePath;
+    const nextEmbeddedSourcePaths = new Set<string>();
+
     if (!this.svg) return;
 
     try {
-      const parsePlugins = this.sourcePath
+      const parsePlugins = sourcePath
         ? [
             remarkMath,
-            createRemarkObsidianWikilinks(this.app, this.sourcePath),
-            createRemarkObsidianImages(this.app, this.sourcePath),
+            createRemarkObsidianWikilinks(this.app, sourcePath),
+            createRemarkObsidianImages(this.app, sourcePath),
           ]
         : [remarkMath];
       const { root, frontmatter } = parse(markdown, {
@@ -545,10 +616,10 @@ export class MaploomView extends ItemView {
       if (this.showNoteContent) {
         materializeNoteBlocks(treeRoot, markdown);
 
-        if (this.sourcePath) {
+        if (sourcePath) {
           await expandEmbeddedNotes(treeRoot, {
             app: this.app,
-            sourcePath: this.sourcePath,
+            sourcePath,
             parseMarkdown: (embeddedMarkdown, embeddedPath) => {
               const embedded = parse(embeddedMarkdown, {
                 plugins: [
@@ -560,9 +631,21 @@ export class MaploomView extends ItemView {
               });
               return embedded.root as unknown as NoteTreeNode;
             },
+            onResolvedFile: (file) => {
+              nextEmbeddedSourcePaths.add(file.path);
+            },
           });
         }
       }
+
+      if (
+        renderRequest !== this.renderSequence ||
+        loadRequest !== this.sourceLoadSequence ||
+        this.sourcePath !== sourcePath ||
+        !this.svg
+      ) return;
+
+      this.embeddedSourcePaths = nextEmbeddedSourcePaths;
 
       this.sourceLocations.clear();
       const collectSourceLocations = (node: NoteTreeNode): void => {
@@ -606,6 +689,11 @@ export class MaploomView extends ItemView {
 
       window.requestAnimationFrame(() => this.map?.fit());
     } catch (error) {
+      if (
+        renderRequest !== this.renderSequence ||
+        loadRequest !== this.sourceLoadSequence
+      ) return;
+
       console.error('Maploom rendering failed', error);
       new Notice('Maploom could not render this note. See the developer console.');
     }

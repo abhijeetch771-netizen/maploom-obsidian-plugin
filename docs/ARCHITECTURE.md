@@ -16,6 +16,12 @@ The source note is not kept in a permanent side-by-side panel. Opening or closin
 
 Markmap's grey-dot note markers and click-to-open note popovers are deliberately disabled. Attached paragraphs, code blocks, blockquotes and lists are materialized into ordinary child branches beneath their owning node. Markdown tables are represented by a custom inline atom that draws a true grid-shaped SVG table inside one map node, preserving header cells, column boundaries, wrapped text and left/center/right alignment. A Show notes / Hide notes control toggles these materialized notes; notes are shown by default. The Source note modal remains available for full Obsidian formatting and semantic HTML tables.
 
+## Live map updates
+
+Maploom listens for vault modification events affecting the current source note or a resolved whole-note embedded dependency. It tracks direct and recursively resolved embedded note paths during graph expansion.
+
+Relevant modifications trigger a debounced reload of the source note, causing the graph and its embedded content to be reconstructed. Source-load and render sequence counters prevent stale asynchronous reads or renders from replacing newer results. Dependency tracking is updated only after the current render has completed successfully.
+
 ## Map-to-source navigation
 
 Each Markdown AST node receives a temporary `data.maploomSourcePosition` value before Markmap converts the AST to its smaller tree. Markmap heading/list nodes retain their own `position`; materialized note nodes copy the preserved offset into their synthetic node. This avoids guessing by heading text and handles duplicate titles.

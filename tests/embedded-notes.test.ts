@@ -90,12 +90,16 @@ test('expands a whole-note embed and applies the alias to its container label', 
   const files = [mockFile('Host.md', '# Host'), mockFile('Notes/Linked.md', '# Linked note\nA paragraph.')];
   const app = createMockApp(files);
   const root = hostRoot('![[Notes/Linked|Readable alias]]');
+  const dependencies: string[] = [];
 
   await expandEmbeddedNotes(root, {
     app,
     sourcePath: 'Host.md',
     parseMarkdown: fakeParser,
+    onResolvedFile: (file) => dependencies.push(file.path),
   });
+
+  assert.deepEqual(dependencies, ['Notes/Linked.md']);
 
   const embed = root.children[0];
   assert.equal(embed.type, 'noteEmbed');
@@ -115,12 +119,19 @@ test('expands nested note embeds recursively and resolves each from its parent p
   ];
   const app = createMockApp(files, resolutions);
   const root = hostRoot('![[Area/Source]]');
+  const dependencies: string[] = [];
 
   await expandEmbeddedNotes(root, {
     app,
     sourcePath: 'Host.md',
     parseMarkdown: fakeParser,
+    onResolvedFile: (file) => dependencies.push(file.path),
   });
+
+  assert.deepEqual(dependencies, [
+    'Area/Source.md',
+    'Area/Nested.md',
+  ]);
 
   const sourceEmbed = root.children[0];
   assert.equal(sourceEmbed.type, 'noteEmbed');

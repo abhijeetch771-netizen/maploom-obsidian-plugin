@@ -6,6 +6,7 @@ interface EmbeddedNoteOptions {
   app: App;
   sourcePath: string;
   parseMarkdown: (markdown: string, sourcePath: string) => NoteTreeNode;
+  onResolvedFile?: (file: TFile) => void;
 }
 
 interface EmbedReference {
@@ -112,6 +113,8 @@ export async function expandEmbeddedNotes(
         setEmbedMessage(node, 'Unresolved note embed: ' + reference.linkpath);
         return;
       }
+
+      options.onResolvedFile?.(file);
 
       const canonicalPath = file.path.toLowerCase();
       if (visited.has(canonicalPath)) {
