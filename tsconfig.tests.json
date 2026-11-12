@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "rootDir": ".",
+    "outDir": ".test-dist",
+    "noEmitOnError": true
+  },
+  "include": [
+    "tests/**/*.test.ts",
+    "src/core/note-nodes.ts",
+    "src/core/embedded-notes.ts",
+    "src/core/callout-content.ts",
+    "src/core/table-content.ts",
+    "src/core/image-content.ts"
+  ]
+}
