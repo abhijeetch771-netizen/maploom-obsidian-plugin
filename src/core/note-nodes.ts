@@ -325,7 +325,7 @@ function blockquoteToNode(
   callout.content = [{
     type: 'maploomCallout',
     calloutType: definition.type.toLowerCase(),
-    title: definition.title || titleCase(definition.type),
+    title: definition.title || titleCase(definition.type.toLowerCase()),
     fold: definition.fold,
     paragraphs,
   }];
