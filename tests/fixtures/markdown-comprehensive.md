@@ -24,7 +24,7 @@ The image below is a local SVG asset stored beside this fixture.
 
 ## Tables
 
-The table must appear as a formatted table in the node-note popover.
+The table must appear as a formatted grid in the Maploom graph and as a semantic table in the Source note modal.
 
 | Provision | Subject | Status |
 |:--|:--:|--:|
