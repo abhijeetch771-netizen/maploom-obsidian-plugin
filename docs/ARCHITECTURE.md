@@ -22,6 +22,12 @@ Each Markdown AST node receives a temporary `data.maploomSourcePosition` value b
 
 On map clicks, Maploom uses Markmap's `hitAt` API to distinguish ordinary nodes from fold toggles and links. For a source-linked node, it decorates a rendering-only copy of the Markdown with an invisible anchor at the recorded source offset. The Source note modal renders that copy, scrolls to the marker's containing block and briefly highlights it. The original vault file is neither rewritten nor saved. Wikilink clicks continue to navigate to the wikilink target; fold controls continue to fold/unfold instead of opening the source modal.
 
+## Obsidian callouts
+
+When a blockquote note block begins with an Obsidian callout declaration, Maploom reads the declaration from the original Markdown source line using the preserved source offset. The marker is separated from the parsed inline AST, and the resulting graph node carries the normalized callout type, optional custom title and fold marker in its data. Its label presents the type/title (and whether Obsidian marks it collapsed or expanded); body paragraphs and nested blocks remain child nodes, with their existing inline formatting preserved.
+
+The graph intentionally keeps callout body content visible even for a source callout marked collapsed. Maploom does not use popovers, and the fold marker is retained as metadata/label information rather than treated as an interactive disclosure control. Obsidian's original colored callout panel styling is not yet reproduced in the SVG graph; styling is a separate presentation enhancement. The Source note modal continues to use Obsidian's native Markdown renderer for full callout appearance. Manual verification of the graph conversion is pending.
+
 ## Obsidian note embeds
 
 A standalone whole-note block embed such as `![[Another Note]]` is expanded into a nested graph branch. Maploom resolves the target from the containing note's path through Obsidian's metadata cache, reads the target through the Vault API, and parses it with the same math, wikilink and image transformations as the active note. The original embed paragraph becomes a labelled container, and the imported Markmap tree is nested beneath it.
