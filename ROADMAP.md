@@ -34,8 +34,8 @@
 - [x] Verify Obsidian `![[image]]` embeds appear as actual image previews in the graph; ordinary Markdown image previews also remain functional (manual Obsidian test, user screenshot confirmation, 2026-11-12).
 - [x] Verify Show notes / Hide notes toggling; both states work without restoring grey dots (manual Obsidian test, 2026-11-12).
 - [x] Verify YAML frontmatter `title` is used as the map root label (manual Obsidian test, `Maploom-Large-Paragraph-Test.md`, user screenshot confirmation, 2026-11-12).
-- [x] Implement callout-aware note-block conversion: recognize the Obsidian callout type, custom title and fold marker from the original source line; preserve remaining inline body AST and subsequent body blocks as children (GitHub Actions `npm install` and production build passed, 2026-11-12).
-- [ ] Manually verify callout type/title labels, body paragraphs, inline formatting and collapsed-callout content in the graph; Obsidian colour/panel styling is a separate presentation task.
+- [x] Implement callout-aware note-block conversion and a custom SVG card renderer: retain callout type, title, fold indicator, paragraph separation and inline emphasis; render a type-specific tinted panel and icon in the graph (GitHub Actions build pending; manual Obsidian verification pending).
+- [ ] Manually verify type-specific callout cards, title/icon colours, paragraph layout, inline formatting and collapsed-callout body visibility in Obsidian.
 - [ ] Verify additional Obsidian properties/frontmatter, block references and relative attachment paths.
 
 ## Phase 2 — Obsidian integration and note access
