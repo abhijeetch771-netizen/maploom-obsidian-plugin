@@ -20,6 +20,13 @@ import { tableContent } from '../core/table-content';
 import { expandEmbeddedNotes } from '../core/embedded-notes';
 import { calloutContent } from '../core/callout-content';
 import { embedVaultImagesInSvg, getSvgExportPath, injectCalloutStyles } from '../export/svg-export';
+import htmlClientScript from 'virtual:maploom-html-client';
+import { STANDALONE_HTML_STYLES } from '../export/html-styles';
+import {
+  createStandaloneHtmlDocument,
+  embedVaultResourcesInHtml,
+  getHtmlExportPath,
+} from '../export/html-export';
 
 interface RemarkNode {
   type?: string;
@@ -347,11 +354,156 @@ class SourceNoteModal extends Modal {
   }
 }
 
+function isBlockRenderedEmbed(node: Node): node is HTMLElement {
+  if (!(node instanceof HTMLElement) || !node.matches('span.internal-embed')) {
+    return false;
+  }
+
+  return Array.from(node.children).some((child) => {
+    const tag = child.tagName;
+
+    return (
+      tag === 'DIV' ||
+      tag === 'TABLE' ||
+      tag === 'P' ||
+      tag === 'BLOCKQUOTE' ||
+      tag === 'UL' ||
+      tag === 'OL' ||
+      tag === 'PRE' ||
+      /^H[1-6]$/.test(tag)
+    );
+  });
+}
+
+function normaliseStandaloneEmbeds(root: HTMLElement): void {
+  // Obsidian may place a block embed inside a paragraph. Split that
+  // paragraph so the exported HTML does not contain block elements
+  // inside a paragraph element.
+  for (const paragraph of Array.from(
+    root.querySelectorAll<HTMLParagraphElement>('p'),
+  )) {
+    const containsBlockEmbed = Array.from(paragraph.childNodes).some(
+      (node) => isBlockRenderedEmbed(node),
+    );
+
+    if (!containsBlockEmbed) continue;
+
+    const fragment = document.createDocumentFragment();
+    let inlineParagraph = document.createElement('p');
+
+    const flushInlineParagraph = (): void => {
+      const hasContent = Array.from(inlineParagraph.childNodes).some(
+        (node) =>
+          node.nodeType !== Node.TEXT_NODE ||
+          Boolean(node.textContent?.trim()),
+      );
+
+      if (hasContent) fragment.appendChild(inlineParagraph);
+      inlineParagraph = document.createElement('p');
+    };
+
+    for (const node of Array.from(paragraph.childNodes)) {
+      if (isBlockRenderedEmbed(node)) {
+        flushInlineParagraph();
+
+        const block = document.createElement('div');
+        block.className = 'maploom-embed-block';
+        block.appendChild(node);
+        fragment.appendChild(block);
+      } else {
+        inlineParagraph.appendChild(node);
+      }
+    }
+
+    flushInlineParagraph();
+    paragraph.replaceWith(fragment);
+  }
+
+  // Obsidian uses span wrappers for note and file embeds even though
+  // their contents are block-level elements. Replace those wrappers
+  // with real div elements while retaining their rendered content.
+  for (const embed of Array.from(
+    root.querySelectorAll<HTMLElement>('span.internal-embed'),
+  )) {
+    if (!isBlockRenderedEmbed(embed)) continue;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'maploom-export-embed';
+
+    if (embed.classList.contains('markdown-embed')) {
+      wrapper.classList.add('maploom-export-note-embed');
+    }
+
+    if (embed.classList.contains('file-embed')) {
+      wrapper.classList.add('maploom-export-file-embed');
+    }
+
+    while (embed.firstChild) {
+      wrapper.appendChild(embed.firstChild);
+    }
+
+    embed.replaceWith(wrapper);
+  }
+}
+
+function applyStandaloneSourceTheme(root: HTMLElement): void {
+  const computed = window.getComputedStyle(root);
+
+  // Copy only the theme tokens needed by the standalone Markdown
+  // stylesheet. Never copy every browser-computed property.
+  const themeTokens: Array<[string, string]> = [
+    ['--maploom-source-text', '--text-normal'],
+    ['--maploom-source-background', '--background-primary'],
+    ['--maploom-source-muted', '--text-muted'],
+    ['--maploom-source-faint', '--text-faint'],
+    ['--maploom-source-border', '--background-modifier-border'],
+    ['--maploom-source-accent', '--interactive-accent'],
+    ['--maploom-source-link', '--link-color'],
+    ['--maploom-source-link-hover', '--link-color-hover'],
+    ['--maploom-source-code-background', '--code-background'],
+    ['--maploom-source-code-text', '--code-normal'],
+    ['--maploom-source-blockquote-background', '--blockquote-background-color'],
+    ['--maploom-source-blockquote-border', '--blockquote-border-color'],
+    ['--maploom-source-highlight', '--text-highlight-bg'],
+  ];
+
+  for (const [target, source] of themeTokens) {
+    const value = computed.getPropertyValue(source).trim();
+
+    if (value) root.style.setProperty(target, value);
+  }
+
+  if (!computed.getPropertyValue('--maploom-source-text').trim()) {
+    root.style.setProperty('--maploom-source-text', computed.color);
+  }
+
+  root.style.userSelect = 'text';
+  root.style.pointerEvents = 'auto';
+
+  if (computed.colorScheme === 'dark' || computed.colorScheme === 'light') {
+    root.style.colorScheme = computed.colorScheme;
+  }
+}
+
+function prepareStandaloneSourceNote(root: HTMLElement): void {
+  // These are Obsidian preview-interface elements, not note content.
+  root.querySelectorAll('pre.frontmatter, button.copy-code-button').forEach(
+    (element) => element.remove(),
+  );
+
+  normaliseStandaloneEmbeds(root);
+  applyStandaloneSourceTheme(root);
+}
+
 export class MaploomView extends ItemView {
   private svg: SVGSVGElement | null = null;
   private map: Markmap | null = null;
   private sourcePath: string | null = null;
   private sourceMarkdown: string | null = null;
+  private markmapOptions: unknown;
+  private renderedSourcePath: string | null = null;
+  private renderedSourceMarkdown: string | null = null;
+  private completedRenderSequence = 0;
   private showNoteContent = true;
   private readonly vaultImageContent = createVaultImageContent();
   private readonly sourceLocations = new Map<string, SourceLocation>();
@@ -406,6 +558,7 @@ export class MaploomView extends ItemView {
     });
     toolbar.createEl('button', { text: 'Source note' }).addEventListener('click', () => this.openSourceNote());
     toolbar.createEl('button', { text: 'Export SVG' }).addEventListener('click', () => void this.exportSvg());
+    toolbar.createEl('button', { text: 'Export HTML' }).addEventListener('click', () => void this.exportHtml());
 
     const mapPanel = this.contentEl.createDiv({ cls: 'maploom-map-panel' });
     mapPanel.setAttribute(
@@ -514,6 +667,10 @@ export class MaploomView extends ItemView {
     this.svg = null;
     this.sourceMarkdown = null;
     this.sourcePath = null;
+    this.markmapOptions = undefined;
+    this.renderedSourcePath = null;
+    this.renderedSourceMarkdown = null;
+    this.completedRenderSequence = 0;
     this.sourceLocations.clear();
   }
 
@@ -623,6 +780,156 @@ export class MaploomView extends ItemView {
     }
   }
 
+  private async renderSourceNoteHtml(
+    markdown: string,
+    sourcePath: string,
+  ): Promise<string> {
+    const staging = document.createElement('div');
+    staging.className = 'maploom-export-staging';
+
+    Object.assign(staging.style, {
+      position: 'fixed',
+      left: '-100000px',
+      top: '0',
+      width: '900px',
+      opacity: '0',
+      pointerEvents: 'none',
+      zIndex: '-1',
+    });
+
+    const rendered = document.createElement('div');
+    rendered.className = 'maploom-source-content markdown-rendered';
+    staging.appendChild(rendered);
+    document.body.appendChild(staging);
+
+    const component = new Component();
+    component.load();
+
+    try {
+      await MarkdownRenderer.render(
+        this.app,
+        markdown,
+        rendered,
+        sourcePath,
+        component,
+      );
+
+      prepareStandaloneSourceNote(rendered);
+
+      // Preserve internal-link labels without leaving broken Obsidian URLs.
+      for (const anchor of Array.from(
+        rendered.querySelectorAll<HTMLAnchorElement>('a.internal-link'),
+      )) {
+        const target = anchor.getAttribute('href') ?? '';
+        anchor.setAttribute('data-maploom-internal-link', target);
+        anchor.setAttribute('href', '#maploom-internal-link');
+        anchor.setAttribute(
+          'title',
+          'Internal Obsidian link. Open the original note in Obsidian to follow it.',
+        );
+      }
+
+      return rendered.outerHTML;
+    } finally {
+      component.unload();
+      staging.remove();
+    }
+  }
+
+  private async exportHtml(): Promise<void> {
+    const map = this.map;
+    const tree = map?.tree;
+    const sourcePath = this.sourcePath;
+    const markdown = this.sourceMarkdown;
+
+    if (
+      !map?.result ||
+      !tree ||
+      !sourcePath ||
+      markdown === null ||
+      this.renderedSourcePath !== sourcePath ||
+      this.renderedSourceMarkdown !== markdown ||
+      this.completedRenderSequence !== this.renderSequence
+    ) {
+      new Notice('Maploom: wait for the current note to finish rendering before exporting.');
+      return;
+    }
+
+    const loadSequence = this.sourceLoadSequence;
+    const renderSequence = this.renderSequence;
+    const snapshotTree = JSON.parse(JSON.stringify(tree)) as typeof tree;
+    const snapshotOptions = this.markmapOptions === undefined
+      ? undefined
+      : JSON.parse(JSON.stringify(this.markmapOptions)) as unknown;
+
+    try {
+      const sourceHtml = await this.renderSourceNoteHtml(markdown, sourcePath);
+
+      if (
+        loadSequence !== this.sourceLoadSequence ||
+        renderSequence !== this.renderSequence ||
+        sourcePath !== this.sourcePath
+      ) {
+        new Notice('Maploom: the source changed during export. Please export again.');
+        return;
+      }
+
+      const embedded = await embedVaultResourcesInHtml(
+        sourceHtml,
+        snapshotTree,
+        this.app,
+      );
+
+      if (
+        loadSequence !== this.sourceLoadSequence ||
+        renderSequence !== this.renderSequence ||
+        sourcePath !== this.sourcePath
+      ) {
+        new Notice('Maploom: the source changed during export. Please export again.');
+        return;
+      }
+
+      if (embedded.unresolvedLocalResources.length > 0) {
+        console.error(
+          'Maploom: unresolved local HTML export resources',
+          embedded.unresolvedLocalResources,
+        );
+        new Notice(
+          'Maploom: HTML not exported. ' +
+          embedded.unresolvedLocalResources.length +
+          ' local resource(s) could not be embedded. See the developer console.',
+        );
+        return;
+      }
+
+      const filename = sourcePath.split('/').pop() ?? sourcePath;
+      const title = filename.replace(/\.[^.]+$/, '');
+
+      const documentHtml = createStandaloneHtmlDocument({
+        title,
+        payload: {
+          title,
+          tree: embedded.tree,
+          markmapOptions: snapshotOptions,
+          sourceHtml: embedded.html,
+        },
+        styles: STANDALONE_HTML_STYLES,
+        clientScript: htmlClientScript,
+      });
+
+      const outputPath = getHtmlExportPath(
+        sourcePath,
+        (path) => this.app.vault.getAbstractFileByPath(path) !== null,
+      );
+
+      const exportedFile = await this.app.vault.create(outputPath, documentHtml);
+      new Notice('Maploom: standalone HTML exported to ' + exportedFile.path);
+    } catch (error) {
+      console.error('Maploom: HTML export failed', error);
+      new Notice('Maploom could not export the HTML file. See the developer console.');
+    }
+  }
+
   private openSourceNoteAt(location: SourceLocation): void {
     if (!this.sourceMarkdown || !this.sourcePath) return;
     const anchorId = 'maploom-source-target-' + (++this.sourceAnchorSequence);
@@ -688,6 +995,7 @@ export class MaploomView extends ItemView {
       ) return;
 
       this.embeddedSourcePaths = nextEmbeddedSourcePaths;
+      this.markmapOptions = frontmatter?.markmap;
 
       this.sourceLocations.clear();
       const collectSourceLocations = (node: NoteTreeNode): void => {
@@ -728,6 +1036,10 @@ export class MaploomView extends ItemView {
 
       if (this.map) this.map.setTree(root, viewOptions);
       else this.map = Markmap.create(this.svg, root, viewOptions);
+
+      this.renderedSourcePath = sourcePath;
+      this.renderedSourceMarkdown = markdown;
+      this.completedRenderSequence = renderRequest;
 
       window.requestAnimationFrame(() => this.map?.fit());
     } catch (error) {

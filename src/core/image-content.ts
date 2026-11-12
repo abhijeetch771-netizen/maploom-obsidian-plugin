@@ -17,7 +17,7 @@ const PLACEHOLDER: Size = { width: 96, height: 64 };
 function safeImageSource(src: string): boolean {
   return (
     /^(https?:|app:|obsidian:)/i.test(src) ||
-    /^data:image\/(?:png|jpe?g|gif|webp|avif);base64,/i.test(src)
+    /^data:image\/(?:png|jpe?g|gif|webp|avif|svg\+xml);base64,/i.test(src)
   );
 }
 
