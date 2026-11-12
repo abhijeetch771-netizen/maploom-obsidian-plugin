@@ -129,7 +129,7 @@ test('table SVG renderer outputs a real grid and escapes cell content', () => {
     style,
     context,
   )[0].svg?.() ?? '';
-  assert.equal((svg.match(/<rect/g) ?? []).length, 2);
+  assert.equal((svg.match(/<rect/g) ?? []).length, 4);
   assert.match(svg, /Provision/);
   assert.match(svg, /Article 14/);
   assert.match(svg, /Equality &amp; &lt;liberty&gt;/);
